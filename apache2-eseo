@@ -55,3 +55,6 @@ EXPOSE 80 430
 
 # création de volume partagé
 VOLUME /www
+
+# Permet de lancer le site
+CMD ["usr/sbin/httpd","-D","FOREGROUND"]
