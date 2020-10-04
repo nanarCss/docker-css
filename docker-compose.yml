@@ -1,0 +1,41 @@
+
+version: "2"
+services:
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: network
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: network
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - ./db:/var/lib/mysql
+    networks:
+    - wp
+
+  wordpress:
+    depends_on:
+     - db
+    build:
+      context: .
+      dockerfile: apache2-eseo
+    restart: always
+    ports:
+      - 8080:80
+    volumes:
+      - ./www:/var/www/html
+    networks:
+    - wp
+
+networks:
+  wp:
+
+volumes:
+  www:
+  db:
