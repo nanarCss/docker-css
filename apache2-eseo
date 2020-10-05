@@ -35,7 +35,7 @@ RUN apk add apache2 && \
 # Modification configuration Wordpress pour la DB
     sed -i "s|define( 'DB_USER', 'username_here' );|define( 'DB_USER', 'root'); |g" /www/wordpress/wp-config.php && \
     sed -i "s|define( 'DB_PASSWORD', 'password_here' );|define( 'DB_PASSWORD', 'network'); |g" /www/wordpress/wp-config.php && \
-    sed -i "s|define( 'DB_HOST', 'localhost' );|define( 'DB_HOST', '192.168.56.120:3306'); |g" /www/wordpress/wp-config.php && \
+    sed -i "s|define( 'DB_HOST', 'localhost' );|define( 'DB_HOST', 'db:3306'); |g" /www/wordpress/wp-config.php && \
     sed -i "s|define( 'DB_CHARSET', 'utf8' );|define( 'DB_CHARSET', 'utf8'); |g" /www/wordpress/wp-config.php && \
     sed -i "s|define( 'DB_COLLATE', '' );|define( 'DB_COLLATE', ''); |g" /www/wordpress/wp-config.php && \
     sed -i "s|define( 'DB_NAME', 'database_name_here' );|define( 'DB_NAME', 'wordpress'); |g" /www/wordpress/wp-config.php
