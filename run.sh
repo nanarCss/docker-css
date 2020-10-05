@@ -12,8 +12,8 @@
 #PORT=8080
 
 # Stop and Delete containers
-docker stop $(docker ps -qa)
-docker rm $(docker ps -qa)
+# docker stop $(docker ps -qa)
+# docker rm $(docker ps -qa)
 
 # MySQL
 #docker run --name $mysql_container_name -e MYSQL_ROOT_PASSWORD=$rt_pass -e MYSQL_DATABASE=$db -d mysql:latest
