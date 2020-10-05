@@ -1,6 +1,7 @@
 #!bin/sh
 # This script will build the image of dockerfile choosen
-#dockerfile=apache2-eseo
 
-#docker build -t pennarguear/$dockerfille - < $dockerfile
-docker-compose build
+# The name of the Dockerfile
+dockerfile=apache2-eseo
+
+docker build -t pennarguear/$dockerfile - < $dockerfile
