@@ -162,9 +162,6 @@
       name: dos2unix,net-tools,nmap
       state: latest
 
-  - name: convert test files
-    command: dos2unix /home/vagrant/*.sh
-     
 ### Reboot the System ###
 
   - name: reboot srv-zabbix
