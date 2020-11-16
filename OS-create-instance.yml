@@ -143,16 +143,3 @@
     https_proxy: http://192.168.4.8:3128
     no_proxy: 192.168.4.45
 
-  tasks:
-
-    ### Import playbook XXXXXX to setup base for OS debian/ubuntu
-    - import_tasks: base/debian.yml
-      when: ansible_os_family in ["Debian","Ubuntu"]
-
-    ### Import playbook XXXXXX to setup base for OS redhat/centos
-    - import_tasks: base/redhat.yml
-      when: ansible_os_family in ["CentOS","RedHat"]
-
-    ### Import playbook XXXXXX to deploy application
-    - import_tasks: application/main.yml
-      when: setup_application
