@@ -1,0 +1,165 @@
+---
+
+- hosts: localhost
+  gather_facts: false
+
+  vars_prompt:
+    - name: "openstack_user_domain"
+      prompt: "Openstack user Domain"
+      private: no
+    - name: "openstack_user"
+      prompt: "Openstack User"
+      private: no
+    - name: "openstack_project"
+      prompt: "Openstack Project"
+      private: no
+    - name: "openstack_password"
+      prompt: "Password"
+    - name: "openstack_auth_url"
+      prompt: "Openstack auth Url"
+      private: no
+      default: "https://192.168.4.45:5000/v3"
+    
+  vars_files:
+    - vars/instance_configuration.yml
+    
+  environment:
+    http_proxy: http://192.168.4.8:3128
+    https_proxy: http://192.168.4.8:3128
+    no_proxy: 192.168.4.45
+
+  tasks:
+  - debug: 
+      var: additional_volumes 
+
+  - name: Creates additionnal Cinder Volumes to attach to instance
+    os_volume:
+      state: present
+      auth:
+        auth_url: "{{ openstack_auth_url }}"
+        username: "{{ openstack_user }}"
+        password: "{{ openstack_password }}"
+        project_name: "{{ openstack_project }}"
+        os_user_domain_name: "{{ openstack_user_domain }}"
+        os_project_domain_name: "{{ openstack_user_domain }}"
+      validate_certs: no
+      size: "{{ item.value.size }}"
+      display_name: "{{ item.value.name }}"
+    loop: "{{ lookup('dict', additional_volumes|default({}), wantlist=True) }}"
+    when: additional_volumes is defined and (additional_volumes|length>0)
+    register: volumes_result
+
+  - name: debug volumes result
+    debug:
+      msg: "{{ volumes_result.results| map(attribute='id')| list }}"
+
+#  - fail:
+#      msg: Stop Here For debug
+
+  - name: Creates a new instance on tenant network
+    os_server:
+      state: present
+      auth:
+        auth_url: "{{ openstack_auth_url }}"
+        username: "{{ openstack_user }}"
+        password: "{{ openstack_password }}"
+        project_name: "{{ openstack_project }}"
+        os_user_domain_name: "{{ openstack_user_domain }}"
+        os_project_domain_name: "{{ openstack_user_domain }}"
+      name: "{{ instance_name }}"
+      image: "{{ image_name }}"
+      key_name: "{{ key_name }}"
+      flavor: "{{ flavor_name }}"
+      network: "{{ network_name }}"
+      validate_certs: no
+      auto_ip: false
+      config_drive: yes
+      boot_from_volume: yes
+      terminate_volume: yes
+      volume_size: "{{ instance_volume_size }}"
+      timeout: 360
+      userdata: "{{ userdata }}"
+# might be a solution to attach directly additionnal volumes, but boot_from_volume must bot be set to yes (default to no), 
+# i.e, we are booting directly from image instead of creating a new volume
+# setting boot_from_volume to yes results in instance creation with the OS volume on the last position, instance won't boot!
+#      volumes: "{{ volumes_result.results| map(attribute='id')| list }}"
+
+    register: instance
+
+  - debug:
+      msg: 
+      - "instance {{ instance_name }} deployed with IP {{ instance.openstack.private_v4 }}"
+      - "make sure this IP is declared to the proxy if internet access is required"
+
+  - name: Attach additional volumes to instance
+    os_server_volume:
+      state: present
+      auth:
+        auth_url: "{{ openstack_auth_url }}"
+        username: "{{ openstack_user }}"
+        password: "{{ openstack_password }}"
+        project_name: "{{ openstack_project }}"
+        os_user_domain_name: "{{ openstack_user_domain }}"
+        os_project_domain_name: "{{ openstack_user_domain }}"
+      server: "{{ instance_name }}"
+      volume: "{{ item.value.name }}"
+      validate_certs: no
+    loop: "{{ lookup('dict', additional_volumes|default({}), wantlist=True) }}"
+    when: additional_volumes is defined and (additional_volumes|length>0)
+      
+
+  - name: Wait for SSH on the Instance
+    command: >
+      ssh -i /root/.ssh/ansible -oBatchMode=yes -oStrictHostKeyChecking=no ansible@{{instance.openstack.private_v4}} true
+    register: result
+    until: result is succeeded
+    retries: 30
+    delay: 10
+
+  - name: Add Instance to Ansible in-memory Inventory
+    add_host:
+      name: "{{ instance_name }}"
+      groups: "{{ openstack_project }}"
+      ansible_ssh_host: "{{ instance.openstack.private_v4 }}" 
+
+- hosts: srvproxy
+
+  tasks:
+  - name: Add Acl to proxy with instance IP
+    lineinfile:
+      path: /etc/squid/squid.conf
+      line: "acl localnet src {{ hostvars['localhost']['instance']['openstack']['private_v4'] }}/32 # IP {{ instance_name }} "
+      insertafter: '^################### Ansible managed #################'
+
+  - name: Reload Squid configuration on proxy
+    service:
+      name: squid
+      state: reloaded
+
+
+- hosts: "{{ instance_name }}"
+  
+  vars_files:
+    - vars/instance_configuration.yml
+    - vars/application_configuration.yml
+
+  vars:
+
+  environment:
+    http_proxy: http://192.168.4.8:3128
+    https_proxy: http://192.168.4.8:3128
+    no_proxy: 192.168.4.45
+
+  tasks:
+
+    ### Import playbook XXXXXX to setup base for OS debian/ubuntu
+    - import_tasks: base/debian.yml
+      when: ansible_os_family in ["Debian","Ubuntu"]
+
+    ### Import playbook XXXXXX to setup base for OS redhat/centos
+    - import_tasks: base/redhat.yml
+      when: ansible_os_family in ["CentOS","RedHat"]
+
+    ### Import playbook XXXXXX to deploy application
+    - import_tasks: application/main.yml
+      when: setup_application
