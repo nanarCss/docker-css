@@ -1,0 +1,46 @@
+##############################################################
+# List of tasks to prepare the base instance
+#   - Set DNS
+#   - Set PackageManager(apt) proxy
+#   - Scan for new disks
+#   - Install OpenVM-Tools
+#
+# Future improvement might include:
+#   - Security management (Fail2Ban, restrictions)
+#   - Monitoring
+# but those might better be done via import from the main play
+#
+##############################################################
+- name: Include OS-specific variables (debian)
+  include_vars: vars/debian_base.yml
+  when: ansible_os_family in ["Debian","Ubuntu"]
+
+# Shouldn't be necessary since debian and ubuntu share mostly same vars
+#- name: Include OS-specific variables (Ubuntu)
+#  include_vars: vars/ubuntu_base.yml
+#  when: ansible_os_family in ["Ubuntu"]
+
+- name: Configure APT proxy
+  lineinfile:
+    path: /etc/apt/apt.conf.d/proxy
+    line: 'Acquire::http::Proxy "http://192.168.11.43:9999";'
+    state: present
+    insertafter: EOF
+    create: yes
+  when: ansible_os_family in ["Debian","Ubuntu"]
+
+- name : Correct DNS configuration, add DNS
+  lineinfile:
+    path: /etc/resolv.conf
+    line: "nameserver 192.168.4.14"
+    insertafter: EOF
+  when: ansible_os_family in ["Debian","Ubuntu"]
+
+- name: Rescan for new attached volumes
+  shell: echo "- - -" > /sys/class/scsi_host/host0/scan
+
+- name: Install open-vm-tools
+  yum:
+    state: present
+    name: open-vm-tools
+  when: ansible_os_family in ["Debian","Ubuntu"]
