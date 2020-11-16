@@ -141,7 +141,6 @@
   
   vars_files:
     - vars/instance_configuration.yml
-    - vars/application_configuration.yml
 
   vars:
 
