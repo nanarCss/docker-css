@@ -21,12 +21,12 @@
     os_volume:
       state: present
       auth:
-        auth_url: 192.168.4.45
-        username: PFE-AWX
-        password: network
-        project_name: PFE
-        os_user_domain_name: DIS
-        os_project_domain_name: DIS
+        auth_url: "{{ openstack_auth_url }}"
+        username: "{{ openstack_user }}"
+        password: "{{ openstack_password }}"
+        project_name: "{{ openstack_project }}"
+        os_user_domain_name: "{{ openstack_user_domain }}"
+        os_project_domain_name: "{{ openstack_user_domain }}"
       validate_certs: no
       size: "{{ item.value.size }}"
       display_name: "{{ item.value.name }}"
