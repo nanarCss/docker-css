@@ -1,0 +1,7 @@
+---
+
+openstack_auth_url: "192.168.4.45"
+openstack_user: "PFE-AWX"
+openstack_password: "network"
+openstack_project: "PFE"
+openstack_user_domain: "DIS"
