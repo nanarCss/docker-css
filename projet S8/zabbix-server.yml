@@ -1,0 +1,209 @@
+---
+- hosts: srv-zabbix
+  become: yes
+
+  tasks:
+
+### FQDN CONFIGURATION ###
+
+  - name: delete hosts file
+    file:
+      state: absent
+      path: /etc/hosts
+
+  - name: create & config hosts file
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost.equipe3.sirt.tp       localhost
+        10.10.1.50      srv-zabbix.equipe3.sirt.tp      srv-zabbix
+        
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+ 
+ 
+
+ ### AUTO EDIT RESOLV.CONF ###
+ 
+  - name: install resolvconf
+    apt: 
+      name: resolvconf
+      state: latest
+      
+  - name: edit resolv.conf
+    blockinfile:
+      path: /etc/resolvconf/resolv.conf.d/head
+      block: |
+        nameserver 10.10.1.2
+        nameserver 10.10.1.3
+
+
+
+### LAMP SERVER CONFIGURATION ###
+
+  - name: LAMP setup
+    apt:
+      name: apache2,mariadb-server,mariadb-client,php,libapache2-mod-php,php-mysql,php-mysqlnd,php-ldap,php-bcmath,php-mbstring,php-gd,php-pdo,php-xml
+
+  - name: Adds Python MySQL support on Debian/Ubuntu
+    apt: pkg="python-mysqldb" state=present
+    when: ansible_os_family == 'Debian'
+
+
+
+### ZABBIX CONFIGURATION ###
+
+  - name: download zabbix 4
+    command: wget https://repo.zabbix.com/zabbix/4.2/debian/pool/main/z/zabbix-release/zabbix-release_4.2-2+buster_all.deb
+
+  - name: dkpg install zabbix 4
+    command:  dpkg -i zabbix-release_4.2-2+buster_all.deb
+
+  - name: apt update
+    become: true
+    apt:
+      upgrade: yes
+      update_cache: yes
+
+  - name: Set root Password
+    mysql_user: login_password=network check_implicit_admin=yes name=root host={{ item }} password=network state=present 
+    with_items:
+     - localhost
+     - 127.0.0.1
+     - ::1
+    
+  - name: Deletes anonymous server user
+    mysql_user: login_user=root login_password="network" user="" host_all=yes state=absent
+
+  - name: Removes the test database
+    mysql_db: login_user=root login_password="network" db=test state=absent
+    
+  - name: Create DB zabbix
+    mysql_db:
+      login_user: root
+      login_password: network
+      db: zabbix
+      encoding: utf8
+      collation: utf8_bin
+      state: present
+
+  - name: Create Zabbix user
+    mysql_user:
+      login_user: root
+      login_password: network
+      name: zabbix
+      password: network
+      priv: "zabbix.*:ALL"
+
+  - name: avoid MySQL error 1118 --> row size too large
+    command: mysql -uroot -p'network' zabbix -e "set global innodb_strict_mode='OFF';"
+
+  - name: services zabbix
+    command: apt -y install zabbix-server-mysql zabbix-frontend-php zabbix-agent
+      
+  - name: unarchive the sql file inside /usr/share/doc/zabbix-server-mysql
+    command: gunzip /usr/share/doc/zabbix-server-mysql/create.sql.gz
+    
+  - name: import zabbix sql to DB
+    mysql_db:
+      login_user: zabbix
+      login_password: network
+      state: import
+      name: zabbix
+      target: /usr/share/doc/zabbix-server-mysql/create.sql
+      
+  - name: replace line
+    lineinfile:
+     dest: /etc/zabbix/zabbix_server.conf
+     regexp: '# DBHost=localhost'
+     line: 'DBHost=localhost'
+     backrefs: yes
+     
+  - name: replace line2
+    lineinfile:
+     dest: /etc/zabbix/zabbix_server.conf
+     regexp: '# DBPassword='
+     line: 'DBPassword=network'
+     backrefs: yes
+     
+  - name: replace line3
+    lineinfile:
+     dest: /etc/zabbix/zabbix_server.conf
+     regexp: 'DBUser=zabbix'
+     line: 'DBUser=zabbix'
+     backrefs: yes
+
+  - name: replace line4
+    lineinfile:
+     dest: /etc/zabbix/apache.conf
+     regexp: '# php_value date.timezone Europe/Riga'
+     line: '        php_value date.timezone Europe/Paris'
+     backrefs: yes
+  
+  - name: replace Server IP
+    lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: 'Server=127.0.0.1'
+     line: 'Server=10.10.1.50'
+     backrefs: yes  
+
+  - name: replace active Server IP
+    lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: 'ServerActive=127.0.0.1'
+     line: 'ServerActive=10.10.1.50'
+     backrefs: yes  
+
+  - name: replace hostname Server
+    lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: 'Hostname=Zabbix server'
+     line: 'Hostname=srv-zabbix'
+     backrefs: yes
+  
+  - name: avoid Zabbix discoverer processes more than 75% busy - 1
+    lineinfile:
+     dest: /etc/zabbix/zabbix_server.conf
+     regexp: '# StartPingers=1'
+     line: 'StartPingers=20'
+     backrefs: yes
+
+  - name: avoid Zabbix discoverer processes more than 75% busy - 2
+    lineinfile:
+     dest: /etc/zabbix/zabbix_server.conf
+     regexp: '# StartDiscoverers=1'
+     line: 'StartDiscoverers=20'
+     backrefs: yes
+
+  - name: enable zabbix agent
+    command: systemctl enable zabbix-agent
+  
+  - name: start zabbix agent
+    command: systemctl start zabbix-agent
+    
+  - name: start zabbix server
+    command: service zabbix-server start
+
+  - name: enable zabbix server
+    command: update-rc.d zabbix-server enable
+
+  - name: restart apache
+    command: systemctl restart apache2
+
+# Install net-tools / nmap / dos2unix
+
+  - name: Install net-tools / nmap / dos2unix
+    apt:
+      name: dos2unix,net-tools,nmap
+      state: latest
+
+  - name: convert test files
+    command: dos2unix /home/vagrant/*.sh
+     
+### Reboot the System ###
+
+  - name: reboot srv-zabbix
+    reboot:
+ 
