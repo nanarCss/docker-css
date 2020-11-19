@@ -12,12 +12,12 @@
     name: "{{ instance_name }}-data-volume"
     size: 20
 - userdata: |
-  {%- raw -%}#!/bin/bash
-  # Add ansible user and key file
-  groupadd -g 1200 ansible
-  useradd -g 1200 -u 1200 -m -s /bin/bash ansible
-  mkdir -p /home/ansible/.ssh
-  #echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDHrfO0KmOMbgK1P3uv0tMaopNmYsrGqgylgLGtJAUS0bHidOeCcMk9pCfg8uCk1eWG9GMxSHxKEiXm0uN2nVSBeQRX4N01AdgohpgdhPMXBaN70JiZMaqeYSL8DRas/Qi3dZD3/5ie5pISWkJdZ9ZrH5tgtMaO8EQYa5enqCHzqCjTKkDHKLrmczkza46HF1XTalb1Ykma3X8CMW7/O0WqDWWlwspSsfkMzhrfyP72xkqhnO4yWkjbOaY38bUle0KCF2K/nWKYzwTlRFWACkvkmPvepa+75l1yVq6D4wBweZnVqBwqtWlvhb/AXJCLAp+sbbgs8XEGoiekNQYfK7QariziYKFNL7vM/PJFH7/QFN+HI8GOi/XaGuhccp87gV5qGnVei5oimNjethCVYQPaP46cw+7F64VY8261sdeh+EF08EWLkevHDp0S8DyzRJgyyZCL0xzEmufkBdJFz1U3nwR+sl5RExVdoPFaZl3yT5TqN6GoGNdVSiQfEsqkK1HFiMuRoBl6waLVpL0508J/j6qlCkvPzajPKpmtP1CBC765Iufn/2mHqZT1soebJnw45aeuxOCDrn2e0cuoqmlwXSfriiepOhcF5/MG8qYHkDCOFFeWcG9HyhjvtAbHurBaLVAjhwNNNa8WwzUa+oYKFvP35c2iNbUnkCNlO9ouPQ== root@Srv-ansible" >>/home/ansible/.ssh/authorized_keys
-  echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDb/qMT66yUqQmSx0zTNn6W//9dGjumcy9B8jnOuojt0lM0CKIfLU7gUI8u6HYVrNPAyT0hBFQjG1Z1cA82Wp1Tufv4LawfmBCZ5W3C1pX/njoKO/Uxj1emnHnYjSDDj2kAHLSwIzmkvih+PKDQ445NNJAeVizxcnmXS5Oa1bwO/vBMzMCZwfedCMhH1eOds+P2mMylFXufNq6moNgqOAHe36mZNq7aM9FunCvqAPyD2bJCPW6UXhx/ysWxVC2TdI1BsgU5Yml1vT0KtK0+EUcR71ahOmN8XVAMCZIGNvhpZqAq4vTf8xs0SCNtE8sgsWZTnNz1HdwdyJOfjQfQNzS/63h2zQkWWNvVqDSDxg/KltNHii7PlBvhMFAIS00fw6E3sAxBcB3IBe28VaddnxWDn6CY/X4thqwUWxhDHhZC59rAVmHQ+ovFzWW6c3EQqTyIYIavrprTOl99cQmwyJavMG1XavhHdDFvQWrOPDhKzPFW01CAB2qi7KLD00RbLh6rNncKlbcGHb+0DMpkB0um6/E2HGLkLeNR2HHzTNfjOLwZiIYL/EJbMUDSDwOqA/bxFgjwOmi24B6hbDDsfuysZ1p5TXkoMGiAq1zOzNx9d9JWC7FIp91KC+FMCLn+rxOErRrV8pE3KscQR1xPvwkOfg6s53qe3c9aFVyzxcEVgw== root@ansible-pip.novalocal" >> /home/ansible/.ssh/authorized_keys
-  echo "ansible ALL=(ALL) NOPASSWD:ALL" >>/etc/sudoers.d/ansible
-  {% endraw %}
+   {%- raw -%}#!/bin/bash
+   # Add ansible user and key file
+   groupadd -g 1200 ansible
+   useradd -g 1200 -u 1200 -m -s /bin/bash ansible
+   mkdir -p /home/ansible/.ssh
+   #echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDHrfO0KmOMbgK1P3uv0tMaopNmYsrGqgylgLGtJAUS0bHidOeCcMk9pCfg8uCk1eWG9GMxSHxKEiXm0uN2nVSBeQRX4N01AdgohpgdhPMXBaN70JiZMaqeYSL8DRas/Qi3dZD3/5ie5pISWkJdZ9ZrH5tgtMaO8EQYa5enqCHzqCjTKkDHKLrmczkza46HF1XTalb1Ykma3X8CMW7/O0WqDWWlwspSsfkMzhrfyP72xkqhnO4yWkjbOaY38bUle0KCF2K/nWKYzwTlRFWACkvkmPvepa+75l1yVq6D4wBweZnVqBwqtWlvhb/AXJCLAp+sbbgs8XEGoiekNQYfK7QariziYKFNL7vM/PJFH7/QFN+HI8GOi/XaGuhccp87gV5qGnVei5oimNjethCVYQPaP46cw+7F64VY8261sdeh+EF08EWLkevHDp0S8DyzRJgyyZCL0xzEmufkBdJFz1U3nwR+sl5RExVdoPFaZl3yT5TqN6GoGNdVSiQfEsqkK1HFiMuRoBl6waLVpL0508J/j6qlCkvPzajPKpmtP1CBC765Iufn/2mHqZT1soebJnw45aeuxOCDrn2e0cuoqmlwXSfriiepOhcF5/MG8qYHkDCOFFeWcG9HyhjvtAbHurBaLVAjhwNNNa8WwzUa+oYKFvP35c2iNbUnkCNlO9ouPQ== root@Srv-ansible" >>/home/ansible/.ssh/authorized_keys
+   echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDb/qMT66yUqQmSx0zTNn6W//9dGjumcy9B8jnOuojt0lM0CKIfLU7gUI8u6HYVrNPAyT0hBFQjG1Z1cA82Wp1Tufv4LawfmBCZ5W3C1pX/njoKO/Uxj1emnHnYjSDDj2kAHLSwIzmkvih+PKDQ445NNJAeVizxcnmXS5Oa1bwO/vBMzMCZwfedCMhH1eOds+P2mMylFXufNq6moNgqOAHe36mZNq7aM9FunCvqAPyD2bJCPW6UXhx/ysWxVC2TdI1BsgU5Yml1vT0KtK0+EUcR71ahOmN8XVAMCZIGNvhpZqAq4vTf8xs0SCNtE8sgsWZTnNz1HdwdyJOfjQfQNzS/63h2zQkWWNvVqDSDxg/KltNHii7PlBvhMFAIS00fw6E3sAxBcB3IBe28VaddnxWDn6CY/X4thqwUWxhDHhZC59rAVmHQ+ovFzWW6c3EQqTyIYIavrprTOl99cQmwyJavMG1XavhHdDFvQWrOPDhKzPFW01CAB2qi7KLD00RbLh6rNncKlbcGHb+0DMpkB0um6/E2HGLkLeNR2HHzTNfjOLwZiIYL/EJbMUDSDwOqA/bxFgjwOmi24B6hbDDsfuysZ1p5TXkoMGiAq1zOzNx9d9JWC7FIp91KC+FMCLn+rxOErRrV8pE3KscQR1xPvwkOfg6s53qe3c9aFVyzxcEVgw== root@ansible-pip.novalocal" >> /home/ansible/.ssh/authorized_keys
+   echo "ansible ALL=(ALL) NOPASSWD:ALL" >>/etc/sudoers.d/ansible
+   {% endraw %}
