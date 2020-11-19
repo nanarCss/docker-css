@@ -21,7 +21,7 @@
       
   vars_files:
   
-    - /PFE/vars/instance_configuration.yml
+    - vars/instance_configuration.yml
     
   environment:
     http_proxy: http://192.168.4.8:3128
@@ -140,8 +140,8 @@
 - hosts: "{{ instance_name }}"
   
   vars_files:
-    - /PFE/vars/instance_configuration.yml
-    - /PFE/vars/application_configuration.yml
+    - vars/instance_configuration.yml
+    - vars/application_configuration.yml
     
   vars:
 
