@@ -3,21 +3,6 @@
 - hosts: localhost
   gather_facts: false
 
-  vars_prompt:
-    - name: "openstack_user_domain"
-      private: no
-      default: "DIS"
-    - name: "openstack_user"
-      private: no
-      default: "PFE-AWX"
-    - name: "openstack_project"
-      private: no
-      default: "PFE"
-    - name: "openstack_password"
-      default: "network"
-    - name: "openstack_auth_url"
-      private: no
-      default: "https://192.168.4.45:5000/v3"
       
   vars_files:
   
@@ -36,12 +21,12 @@
     os_volume:
       state: present
       auth:
-        auth_url: "{{ openstack_auth_url }}"
-        username: "{{ openstack_user }}"
-        password: "{{ openstack_password }}"
-        project_name: "{{ openstack_project }}"
-        os_user_domain_name: "{{ openstack_user_domain }}"
-        os_project_domain_name: "{{ openstack_user_domain }}"
+        auth_url: 192.168.4.45
+        username: PFE-AWX
+        password: network
+        project_name: PFE
+        os_user_domain_name: DIS
+        os_project_domain_name: DIS
       validate_certs: no
       size: "{{ item.value.size }}"
       display_name: "{{ item.value.name }}"
