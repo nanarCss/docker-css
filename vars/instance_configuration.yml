@@ -9,7 +9,7 @@
 - instance_volume_size: 10
 - additional_volumes:
    data-disk:
-    name: "{{ instance_name }}-data-volume"
+    name: PFE-AWX-distance-data-volume"
     size: 20
 - userdata: |
    {%- raw -%}#!/bin/bash
