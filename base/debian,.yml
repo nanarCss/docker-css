@@ -1,24 +1,7 @@
-##############################################################
-# List of tasks to prepare the base instance
-#   - Set DNS
-#   - Set PackageManager(apt) proxy
-#   - Scan for new disks
-#   - Install OpenVM-Tools
-#
-# Future improvement might include:
-#   - Security management (Fail2Ban, restrictions)
-#   - Monitoring
-# but those might better be done via import from the main play
-#
-##############################################################
+
 - name: Include OS-specific variables (debian)
   include_vars: vars/debian_base.yml
   when: ansible_os_family in ["Debian","Ubuntu"]
-
-# Shouldn't be necessary since debian and ubuntu share mostly same vars
-#- name: Include OS-specific variables (Ubuntu)
-#  include_vars: vars/ubuntu_base.yml
-#  when: ansible_os_family in ["Ubuntu"]
 
 - name: Configure APT proxy
   lineinfile:
