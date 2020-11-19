@@ -1,5 +1,7 @@
 ---
-
+- hosts:
+  become: yes
+  
 # do we customize instance after deployement
 setup_application: True
 # disks and LVM vars application and roles variables
