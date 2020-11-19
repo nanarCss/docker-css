@@ -1,6 +1,4 @@
 ---
-- hosts:
-  become: yes
   
 # do we customize instance after deployement
 setup_application: True
