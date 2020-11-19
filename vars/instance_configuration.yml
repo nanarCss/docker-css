@@ -2,11 +2,11 @@
 - hosts:
   become: yes
  
-- auth_url: "192.168.4.45"
-- username: "PFE-AWX"
-- password: "network"
-- project_name: "PFE"
-- os_user_domain_name: "DIS"
+- openstack_auth_url: "192.168.4.45"
+- openstack_user: "PFE-AWX"
+- openstack_password: "network"
+- openstack_project: "PFE"
+- openstack_user_domain: "DIS"
 - flavor_name: "m1.tiny"
 - key_name: "pfe-awx-key"
 - image_name: "Debian-10.4-amd64"
