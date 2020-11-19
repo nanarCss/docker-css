@@ -1,5 +1,7 @@
 ---
-
+- hosts:
+  become: yes
+  
 flavor_name: "m1.tiny"
 key_name: "pfe-awx-key"
 image_name: "Debian-10.4-amd64"
