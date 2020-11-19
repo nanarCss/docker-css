@@ -14,7 +14,6 @@
       private: no
       default: "PFE"
     - name: "openstack_password"
-      prompt: "Password"
       default: "network"
     - name: "openstack_auth_url"
       private: no
