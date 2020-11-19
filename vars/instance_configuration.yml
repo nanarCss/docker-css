@@ -2,16 +2,16 @@
 - hosts:
   become: yes
   
-flavor_name: "m1.tiny"
-key_name: "pfe-awx-key"
-image_name: "Debian-10.4-amd64"
-network_name: "PFE-network"
-instance_volume_size: 10
-additional_volumes:
-  data-disk:
+- flavor_name: "m1.tiny"
+- key_name: "pfe-awx-key"
+- image_name: "Debian-10.4-amd64"
+- network_name: "PFE-network"
+- instance_volume_size: 10
+- additional_volumes:
+   data-disk:
     name: "{{ instance_name }}-data-volume"
     size: 20
-userdata: |
+- userdata: |
   {%- raw -%}#!/bin/bash
   # Add ansible user and key file
   groupadd -g 1200 ansible
