@@ -7,6 +7,7 @@
   vars_files:
   
     - vars/instance_configuration.yml
+    - vars/auth_PFE.yml
     
   environment:
     http_proxy: http://192.168.4.8:3128
