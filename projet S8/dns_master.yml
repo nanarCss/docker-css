@@ -1,0 +1,308 @@
+---
+- hosts: srv-dns-master
+  become: yes
+
+  tasks:
+
+### NFS CLIENT CONFIGURATION ###
+
+  - name: Install latest version of "nfs-common"
+    apt:
+      name: nfs-common
+      state: latest
+
+  - name: Creates directory
+    file:
+      path: /share
+      state: directory
+
+  - name: Creates directory
+    file:
+      path: /share/dns_client
+      state: directory
+
+  - name: Execute the command
+    shell: sudo mount 10.10.1.40:/share/dns/master  /share/dns_client
+
+  - lineinfile:
+      dest: /etc/fstab
+      line: '10.10.1.40:/share/dns/master  /share/dns_client    nfs  _netdev,rw 0 0'
+
+      ### CRON CONFIG ###
+
+  - name: create script
+    copy:
+      dest: /usr/bin/backup.sh
+      content: |
+        #!/bin/bash
+        cp /etc/hosts /share/dns_client/
+        cp /etc/host.conf /share/dns_client/
+        cp /etc/resolvconf/resolv.conf.d/head /share/dns_client/
+        cp /etc/bind/db.equipe3.sirt.tp /share/dns_client/
+        cp /etc/bind/db.1.10.10.in-addr.arpa /share/dns_client/
+        cp /etc/bind/named.conf.local /share/dns_client/
+        cp /etc/bind/named.conf.options /share/dns_client/
+
+  - name: chmod
+    shell : chmod 755 /usr/bin/backup.sh
+
+  - name: config cron
+    cron:                                                                                          
+      minute: "30"
+      hour: "19"
+      day: "*"
+      month: "*"
+      weekday: "1,2,3,4,5"
+      job: /usr/bin/backup.sh
+
+  - name: restart cron
+    shell: /etc/init.d/cron restart
+
+### FQDN CONFIGURATION ###
+
+  - name: delete hosts file
+    file:
+      state: absent
+      path: /etc/hosts
+      
+  - name: create & config hosts file
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost.equipe3.sirt.tp       localhost
+        10.10.1.2       srv-dns-master.equipe3.sirt.tp  srv-dns
+
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+
+        
+  - name: config /etc/host.conf
+    lineinfile:
+      path: /etc/host.conf
+      line: "order hosts, bind"
+      insertbefore: "multi on"
+  
+    
+    
+ ### AUTO EDIT RESOLV.CONF ###
+ 
+  - name: install resolvconf
+    apt: 
+      name: resolvconf
+      state: latest
+      
+  - name: edit resolv.conf
+    blockinfile:
+      path: /etc/resolvconf/resolv.conf.d/head
+      block: |
+        nameserver 10.10.1.2
+        nameserver 10.10.1.3
+
+# Install net-tools / nmap / dos2unix
+
+  - name: Install net-tools / nmap / dos2unix
+    apt:
+      name: dos2unix,net-tools,nmap
+      state: latest
+
+ ### DNS CONFIGURATION ###
+
+  - name: install bind9
+    apt: 
+      name: bind9
+      state: latest
+
+  - name: Install dnsutils
+    apt:
+      name: dnsutils
+      state: latest
+      
+  - name: create db.equipe3.sirt.tp
+    file:
+      path: /etc/bind/db.equipe3.sirt.tp
+      state: touch
+      
+      
+  - name: config db.equipe3.sirt.tp
+    blockinfile:
+      path: /etc/bind/db.equipe3.sirt.tp
+      marker: "; {mark} BIND data file"
+      block: |
+        $TTL 86400      ; Refresh cache every day
+        $ORIGIN equipe3.sirt.tp.
+        @            IN      SOA     srv-dns-master.equipe3.sirt.tp. root.equipe3.sirt.tp. (
+                      20200401        ; Serial
+                      1d              ; Refresh
+                      2h              ; Retry
+                      1w              ; Expire
+                      1d)             ; Negative Cache TTL
+        @             IN      NS      srv-dns-master.equipe3.sirt.tp.
+        @             IN      A       10.10.1.2
+                           
+        srv-nat         IN      A       10.10.1.99
+        
+        srv-dns-master  IN      A       10.10.1.2
+        srv-dns-slave   IN      A       10.10.1.3
+        
+        srv-dhcp-master IN      A       10.10.1.6
+        srv-dhcp-slave  IN      A       10.10.1.7
+        
+        srv-mail        IN      A       10.10.1.10
+        
+        srv-proxy-1     IN      A       10.10.1.15
+        srv-proxy-2     IN      A       10.10.1.16
+        
+        virtual-ip-web  IN      A       10.10.1.20
+        srv-web-1       IN      A       10.10.1.21
+        srv-web-2       IN      A       10.10.1.22
+        
+        srv-database-1  IN      A       10.10.1.31
+        srv-database-2  IN      A       10.10.1.32
+        srv-database-3  IN      A       10.10.1.33
+        
+        srv-nfs         IN      A       10.10.1.40
+        srv-backup      IN      A       10.10.1.41
+
+        srv-zabbix      IN      A       10.10.1.50
+        
+        srv-ansible     IN      A       10.10.1.90
+
+        
+        equipe3.sirt.tp IN      MX 10   srv-mail.equipe3.sirt.tp.
+
+        ns1             CNAME           srv-dns-master
+        ns2             CNAME           srv-dns-slave
+        www             CNAME           virtual-ip-web
+        mail            CNAME           srv-mail
+
+
+  - name: create db.1.10.10.in-addr.arpa
+    file:
+      path: /etc/bind/db.1.10.10.in-addr.arpa
+      state: touch
+     
+
+  - name: config db.1.10.10.in-addr.arpa
+    blockinfile:
+      path: /etc/bind/db.1.10.10.in-addr.arpa
+      marker: "; {mark} BIND reverse data file"
+      block: |
+        $TTL    86400           ; Refresh cache every day
+        $ORIGIN 1.10.10.in-addr.arpa.
+        @       IN      SOA     srv-dns-master.equipe3.sirt.tp. root.equipe3.sirt.tp. (
+                20200401        ; Serial
+                1d              ; Refresh
+                2h              ; Retry
+                1w              ; Expire
+                1d)             ; Negative Cache TTL
+        @       IN      NS      srv-dns-master.equipe3.sirt.tp.
+                        
+        99      IN      PTR     srv-nat.equipe3.sirt.tp.
+        
+        2       IN      PTR     srv-dns-master.equipe3.sirt.tp.
+        3       IN      PTR     srv-dns-slave.equipe3.sirt.tp.
+        
+        6       IN      PTR     srv-dhcp-master.equipe3.sirt.tp.
+        7       IN      PTR     srv-dhcp-slave.equipe3.sirt.tp.
+        
+        10      IN      PTR     srv-mail.equipe3.sirt.tp.
+        
+        15      IN      PTR     srv-proxy-1.equipe3.sirt.tp.
+        16      IN      PTR     srv-proxy-2.equipe3.sirt.tp.
+        
+        20      IN      PTR     vitual-ip-web.equipe3.sirt.tp.
+        21      IN      PTR     srv-web-1.equipe3.sirt.tp.
+        22      IN      PTR     srv-web-2.equipe3.sirt.tp.
+        
+        31      IN      PTR     srv-database-1.equipe3.sirt.tp.
+        32      IN      PTR     srv-database-2.equipe3.sirt.tp.
+        33      IN      PTR     srv-database-3.equipe3.sirt.tp.
+        
+        40      IN      PTR     srv-nfs.equipe3.sirt.tp.
+        41      IN      PTR     srv-backup.equipe3.sirt.tp.
+        
+        50      IN      PTR     srv-zabbix.equipe3.sirt.tp.
+        90      IN      PTR     srv-ansible.equipe3.sirt.tp.
+
+
+  - name: config /etc/bind/named.conf.local
+    blockinfile:
+      path: /etc/bind/named.conf.local
+      block: |
+        zone "equipe3.sirt.tp" {
+            type master;
+            file "/etc/bind/db.equipe3.sirt.tp";
+            allow-query { any; };
+            allow-update { none; };
+            also-notify {10.10.1.3; };
+            allow-transfer {10.10.1.3; };
+            notify yes;
+        };
+        
+        zone "1.10.10.in-addr.arpa" {
+            type master;
+            file "/etc/bind/db.1.10.10.in-addr.arpa";
+            allow-update { none; };
+            also-notify {10.10.1.3; };
+            allow-transfer {10.10.1.3; };
+            notify yes;
+            allow-query { any; };
+        };
+        
+        
+  - name: delete /etc/bind/named.conf.options
+    file:
+      path: /etc/bind/named.conf.options
+      state: absent
+
+  - name: create /etc/bind/named.conf.options
+    file:
+      path: /etc/bind/named.conf.options
+      state: touch
+        
+  - name: config /etc/bind/named.conf.options
+    blockinfile:
+      path: /etc/bind/named.conf.options
+      marker: "// {mark} named.conf.options"
+      block: |
+        options {
+                directory "/var/cache/bind";
+
+                // If there is a firewall between you and nameservers you want
+                // to talk to, you may need to fix the firewall to allow multiple
+                // ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+                // If your ISP provided one or more IP addresses for stable
+                // nameservers, you probably want to use them as forwarders.
+                // Uncomment the following block, and insert the addresses replacing
+                // the all-0's placeholder.
+
+                forwarders {
+                        10.10.1.2;
+                        192.168.4.2;
+                        8.8.8.8;
+                        8.8.4.4;
+                };
+                //========================================================================
+                // If BIND logs error messages about the root key being expired,
+                // you will need to update your keys.  See https://www.isc.org/bind-keys
+                //========================================================================
+                dnssec-validation auto;
+                
+                listen-on { 127.0.0.1; 10.10.1.2; 192.168.4.2; };
+                recursion no;
+                allow-query-cache { none; };
+                additional-from-cache no;
+                allow-transfer {10.10.1.3; };
+                auth-nxdomain no;    # conform to RFC1035
+                version none;
+                forward only;
+                //listen-on-v6 { any; };
+        };
+
+### Reboot the System ###
+
+  - name: reboot the virtual machine
+    reboot:

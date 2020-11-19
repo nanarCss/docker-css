@@ -1,0 +1,23 @@
+---
+- hosts: srv-web-2
+  become: yes
+
+  tasks:
+
+### GLUSTER CONFIGURATION ###
+      
+  - name: creates a mounted www directory
+    file:
+      path: /mnt/www/
+      state: directory
+  
+  - name: mount www directory
+    command: mount -t glusterfs srv-web-2:/apache-vol /mnt/www/
+
+  - name: save mount
+    lineinfile:
+      path: /etc/fstab
+      line: "srv-web-2:/apache-vol /mnt/www glusterfs defaults,_netdev 0 0"
+    
+  - name: save mount
+    command: mount -a

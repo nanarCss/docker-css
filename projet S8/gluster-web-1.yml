@@ -1,0 +1,38 @@
+---
+- hosts: srv-web-1
+  become: yes
+
+  tasks:      
+
+### GLUSTER CONFIGURATION ###
+
+  - name: config Gluster for 1st node
+    command: gluster peer probe srv-web-2
+    
+  - pause:
+      seconds: 2
+ 
+  - name: test Gluster status
+    command: gluster peer status
+    
+  - name: start gluster volume
+    command: gluster volume create apache-vol replica 2 srv-web-1:/data/gluster/apache srv-web-2:/data/gluster/apache force
+
+  - name: start gluster volume
+    command: gluster volume start apache-vol
+    
+  - name: creates a mounted www directory
+    file:
+      path: /mnt/www/
+      state: directory
+  
+  - name: mount www directory
+    command: mount -t glusterfs srv-web-1:/apache-vol /mnt/www/
+
+  - name: save mount
+    lineinfile:
+      path: /etc/fstab
+      line: "srv-web-1:/apache-vol /mnt/www glusterfs defaults,_netdev 0 0"
+    
+  - name: save mount
+    command: mount -a

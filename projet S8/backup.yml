@@ -1,0 +1,16 @@
+---
+- hosts: srv-backup
+  become: yes
+  
+  tasks:
+
+#CHANGE SSH CONFIG FOR TEST
+
+  - name: Execute the command to modify the sshd_config
+    shell: sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
+
+  - name: Execute the command to modify the sshd_config
+    shell: sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+
+  - name: Restart the ssh
+    shell: service ssh restart

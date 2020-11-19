@@ -1,0 +1,11 @@
+---
+- hosts: srv-database-3
+  become: yes
+
+  tasks:
+
+  - name: start mysql service
+    service:
+      name: mysql
+      state: started
+      enabled: yes

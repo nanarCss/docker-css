@@ -1,0 +1,257 @@
+---
+- hosts: srv-mail
+  become: yes
+
+  tasks:
+    
+### NFS CLIENT CONFIGURATION ###
+
+  - name: Install latest version of "nfs-common"
+    apt:
+      name: nfs-common
+      state: latest
+
+  - name: Creates directory
+    file:
+      path: /share
+      state: directory
+
+  - name: Creates directory
+    file:
+      path: /share/mail_client
+      state: directory
+
+  - name: Execute the command
+    shell: sudo mount 10.10.1.40:/share/mail  /share/mail_client
+
+  - lineinfile:
+      dest: /etc/fstab
+      line: '10.10.1.40:/share/mail   /share/mail_client    nfs  _netdev,rw 0 0'
+
+
+
+### FQDN CONFIGURATION ###
+
+  - name: delete hosts file
+    file:
+      state: absent
+      path: /etc/hosts
+
+  - name: create & config hosts file
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost.equipe3.sirt.tp   	localhost
+        10.10.1.10      srv-mail.equipe3.sirt.tp    	srv-mail
+
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+
+
+
+ ### AUTO EDIT RESOLV.CONF ###
+ 
+  - name: install resolvconf
+    apt: 
+      name: resolvconf
+      state: latest
+      
+  - name: edit resolv.conf
+    blockinfile:
+      path: /etc/resolvconf/resolv.conf.d/head
+      block: |
+        nameserver 10.10.1.2
+        nameserver 10.10.1.3
+        
+# Install net-tools / nmap / dos2unix
+
+  - name: Install net-tools / nmap / dos2unix
+    apt:
+      name: dos2unix,net-tools,nmap
+      state: latest    
+      
+### SMTP CONFIGURATION ###
+
+  - name: Set Postfix mailname as FQND
+    debconf: 
+      name=postfix 
+      question="postfix/mailname" 
+      value="srv-mail.equipe3.sirt.tp" 
+      vtype="string"
+
+  - name: Set Postfix option type as Internet Site
+    debconf: 
+      name=postfix 
+      question="postfix/main_mailer_type" 
+      value="'Internet Site'" 
+      vtype="string"
+    
+  - name: install postfix
+    apt: 
+      name: postfix,sasl2-bin
+      state: latest
+      
+  - name: save init postfix main config
+    command: mv /etc/postfix/main.cf /etc/postfix/main.cf.old
+
+  - name: config a new postfix main config
+    copy:
+      dest: /etc/postfix/main.cf
+      content: |
+        smtpd_banner = $myhostname ESMTP
+        biff = no
+        # appending .domain is the MUA's job.
+        append_dot_mydomain = no
+        readme_directory = no
+        
+        compatibility_level = 2
+        
+        # TLS parameters
+        smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+        smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+        smtpd_use_tls=yes
+        smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+        smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+        
+        # See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+        # information on enabling SSL in the smtp client.
+        
+        smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, defer_unauth_destination
+        
+        myhostname = srv-mail.equipe3.sirt.tp
+        mydomain = equipe3.sirt.tp
+        myorigin = $mydomain
+        mydestination = $myhostname, $mydomain, localhost.$mydomain, localhost
+        mynetworks = 127.0.0.0/8, 10.10.0.0/16
+          
+        relayhost = 
+        
+        alias_maps = hash:/etc/aliases
+        alias_database = hash:/etc/aliases
+        
+        home_mailbox = Maildir/
+        mailbox_size_limit = 0
+        recipient_delimiter = +
+        inet_interfaces = all
+        #inet_protocols = all
+        inet_protocols = ipv4
+        
+        # SMTP-Auth settings
+        smtpd_sasl_type = dovecot
+        smtpd_sasl_path = private/auth
+        smtpd_sasl_auth_enable = yes
+        smtpd_sasl_security_options = noanonymous
+        smtpd_sasl_local_domain = $myhostname
+        smtpd_recipient_restrictions = permit_mynetworks, permit_auth_destination, permit_sasl_authenticated, reject
+
+
+
+### IMAP CONFIGURATION ###
+
+  - name: install dovecot
+    apt: 
+      name: dovecot-core,dovecot-imapd
+      state: latest
+
+  - name: edit /etc/dovecot/dovecot.conf
+    replace:
+      path: /etc/dovecot/dovecot.conf
+      regexp: '#listen'
+      replace: 'listen'
+
+  - name: edit /etc/dovecot/conf.d/10-auth.conf
+    replace:
+      path: /etc/dovecot/conf.d/10-auth.conf
+      regexp: '#disable_plaintext_auth = yes'
+      replace: 'disable_plaintext_auth = no'
+      
+  - name: edit /etc/dovecot/conf.d/10-auth.conf
+    replace:
+      path: /etc/dovecot/conf.d/10-auth.conf
+      regexp: 'auth_mechanisms = plain'
+      replace: 'auth_mechanisms = plain login'
+
+  - name : edit /etc/dovecot/conf.d/10-mail.conf
+    replace:
+      path: /etc/dovecot/conf.d/10-mail.conf
+      regexp: 'mail_location = mbox:~/mail:INBOX=/var/mail/%u'
+      replace: 'mail_location = maildir:~/Maildir'
+
+  - name: edit /etc/dovecot/conf.d/10-master.conf
+    blockinfile:
+      path: /etc/dovecot/conf.d/10-master.conf
+      insertafter: "# Postfix smtp-auth"
+      block: |
+        unix_listener /var/spool/postfix/private/auth {
+            mode = 0660
+            user = postfix
+            group = postfix
+        }
+        
+        
+
+### CRON CONFIG ###
+
+  - name: create script
+    copy:
+      dest: /usr/bin/backup.sh
+      content: |
+        #!/bin/bash
+        cp /etc/hosts /share/mail_client/
+        cp /etc/resolvconf/resolv.conf.d/head /share/mail_client/
+        cp /etc/postfix/main.cf /share/mail_client/
+        cp /etc/dovecot/dovecot.conf /share/mail_client/
+        cp /etc/dovecot/conf.d/10-auth.conf /share/mail_client/
+        cp /etc/dovecot/conf.d/10-mail.conf /share/mail_client/
+        cp /etc/dovecot/conf.d/10-master.conf /share/mail_client/
+
+  - name: chmod
+    shell : chmod 755 /usr/bin/backup.sh
+
+  - name: config cron
+    cron:                                                                                          
+      minute: "30"
+      hour: "19"
+      day: "*"
+      month: "*"
+      weekday: "1,2,3,4,5"
+      job: /usr/bin/backup.sh
+
+  - name: restart cron
+    shell: /etc/init.d/cron restart
+
+### MAIL UTILS ###
+
+  - name: install mail utils
+    apt:
+      name: mailutils
+      state: latest
+
+
+### WEB SERVER CONFIG ###     
+
+  - name: install web 
+    apt:
+      name: curl,net-tools,bash-completion,wget,lsof,nano,apache2,php,libapache2-mod-php,php-curl,php-xml
+      state: latest
+
+
+### CONFIGURE WEB SERVER INTERFACE ###  
+
+  - name: Remove file (delete file)
+    file:
+      path: /var/www/html/index.html
+      state: absent
+  
+  - name: mail Interface install
+    shell: 'curl -sL https://repository.rainloop.net/installer.php | php'
+    args:
+      chdir: /var/www/html/
+
+
+### Reboot the System ###
+
+  - name: reboot srv-mail
+    reboot:

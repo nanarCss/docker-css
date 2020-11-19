@@ -1,0 +1,188 @@
+---
+- hosts: srv-proxy-2
+  become: yes
+  
+  tasks:
+
+### NFS CLIENT CONFIGURATION ###
+
+  - name: Install latest version of "nfs-common"
+    apt:
+      name: nfs-common
+      state: latest
+
+  - name: Creates directory
+    file:
+      path: /share
+      state: directory
+
+  - name: Creates directory
+    file:
+      path: /share/proxy_client
+      state: directory
+
+  - name: Execute the command
+    shell: sudo mount 10.10.1.40:/share/proxy/slave  /share/proxy_client
+
+  - lineinfile:
+      dest: /etc/fstab
+      line: '10.10.1.40:/share/proxy/slave  /share/proxy_client    nfs  _netdev,rw 0 0'
+
+
+
+### FQDN CONFIGURATION ###
+
+  - name: delete hosts file
+    file:
+      state: absent
+      path: /etc/hosts
+
+  - name: create & config hosts file
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost.equipe3.sirt.tp       localhost
+        10.10.1.15      srv-proxy-1.equipe3.sirt.tp     srv-proxy-1
+        10.10.1.16      srv-proxy-2.equipe3.sirt.tp     srv-proxy-2
+        10.10.1.21      srv-web-1.equipe3.sirt.tp       srv-web-1
+        10.10.1.22      srv-web-2.equipe3.sirt.tp       srv-web-2
+        10.10.1.31      srv-database-1.equipe3.sirt.tp  srv-database-1
+        10.10.1.32      srv-database-2.equipe3.sirt.tp  srv-database-2
+        10.10.1.33      srv-database-3.equipe3.sirt.tp  srv-database-3
+        
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+        
+
+
+ ### AUTO EDIT RESOLV.CONF ###
+ 
+  - name: install resolvconf
+    apt: 
+      name: resolvconf
+      state: latest
+      
+  - name: edit resolvconf
+    blockinfile:
+      path: /etc/resolvconf/resolv.conf.d/head
+      block: |
+        nameserver 10.10.1.2
+        nameserver 10.10.1.3
+    
+### HAPROXY CONFIGURATION ###
+  
+  - name: install HAProxy
+    apt:
+      name: haproxy
+      state: latest
+
+  - name: config /etc/haproxy/haproxy.cfg
+    blockinfile:
+      dest: /etc/haproxy/haproxy.cfg
+      block: |
+        # Define Frontend
+        frontend apache_front
+            bind *:80
+            mode http
+            # Set the default backend
+            default_backend    apache_backend_servers
+            # Enable send X-Forwarded-For header
+            option      forwardfor
+
+        # Define Backend
+        backend apache_backend_servers                                      
+            # Use roundrobin to balance traffic
+            balance     roundrobin
+            # Define the backend servers
+            server      srv-web-1 10.10.1.21:80 check
+            server      srv-web-2 10.10.1.22:80 check
+
+
+
+  ### KEEPALIVED CONFIGURATION ###
+ 
+  - name: edit sysclt.conf
+    blockinfile:
+      path: /etc/sysctl.conf
+      block: |
+        net.ipv4.ip_nonlocal_bind = 1
+        net.ipv4.conf.all.arp_announce = 2
+        net.ipv4.conf.all.arp_ignore = 1
+        net.ipv4.ip_forward = 1
+        
+  - name: reload sysctl.conf
+    command: sysctl -p /etc/sysctl.conf
+  
+  - name: add a keepalived_script user
+    user:
+      name: keepalived_script
+      
+  - name: install keepalived
+    apt:
+      name: keepalived
+      state: latest
+      
+  - name: create & config a keepalive system
+    copy:
+      dest: /etc/keepalived/keepalived.conf
+      content: |
+        vrrp_instance VI_1 {
+            interface eth1
+            state MASTER
+            virtual_router_id 100
+            priority 100
+            advert_int 1
+            authentication {
+                auth_type PASS
+                auth_pass secret
+            }
+            virtual_ipaddress {
+                10.10.1.20/16 brd 10.10.255.255 scope global
+            }
+
+        }
+
+
+
+### CRON CONFIG ###
+
+  - name: create script
+    copy:
+      dest: /usr/bin/backup.sh
+      content: |
+        #!/bin/bash
+        cp /etc/hosts /share/proxy_client/
+        cp /etc/resolv.conf /share/proxy_client/
+        cp /etc/resolvconf/resolv.conf.d/head /share/proxy_client/
+        cp /etc/haproxy/haproxy.cfg /share/proxy_client/
+        cp /etc/sysctl.conf /share/proxy_client/
+        cp /etc/keepalived/keepalived.conf /share/proxy_client/
+
+  - name: chmod
+    shell : chmod 755 /usr/bin/backup.sh
+
+  - name: config cron
+    cron:                                                                                          
+      minute: "30"
+      hour: "19"
+      day: "*"
+      month: "*"
+      weekday: "1,2,3,4,5"
+      job: /usr/bin/backup.sh
+
+  - name: restart cron
+    shell: /etc/init.d/cron restart   
+
+# Install net-tools / nmap / dos2unix
+
+  - name: Install net-tools / nmap / dos2unix
+    apt:
+      name: dos2unix,net-tools,nmap
+      state: latest
+
+### Reboot the System ###
+
+  - name: reboot srv-proxy-2
+    reboot:

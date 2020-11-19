@@ -1,0 +1,57 @@
+---
+- hosts: zabbix-agent
+  become: yes
+
+  tasks:
+
+  - name: download zabbix 4
+    command: wget https://repo.zabbix.com/zabbix/4.2/debian/pool/main/z/zabbix-release/zabbix-release_4.2-2+buster_all.deb
+
+  - name: dkpg install zabbix 4
+    command: dpkg -i zabbix-release_4.2-2+buster_all.deb
+
+  - name: install zabbix-agent
+    apt: 
+      name: zabbix-agent
+      state: latest
+
+  - name: replace Server IP
+    lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: 'Server=127.0.0.1'
+     line: 'Server=10.10.1.50'
+     backrefs: yes  
+
+  - name: replace active Server IP
+    lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: 'ServerActive=127.0.0.1'
+     line: 'ServerActive=10.10.1.50'
+     backrefs: yes
+
+  - name: replace hostname Server
+    lineinfile:
+     dest: /etc/zabbix/zabbix_agentd.conf
+     regexp: 'Hostname=Zabbix server'
+     line: 'Hostname=srv-zabbix'
+     backrefs: yes
+  
+  - name: Install UFW
+    apt:
+      name: ufw
+      state: latest
+
+  - name: Open port 10050 for zabbix-agent
+    command: ufw allow 10050/tcp
+     
+  - name: start service zabbix agent
+    command: service zabbix-agent start
+
+  - name: enable zabbix agent
+    command: systemctl enable zabbix-agent
+  
+  - name: convert test files
+    command: dos2unix /home/vagrant/*.sh
+  
+  - name: start zabbix agent
+    command: systemctl start zabbix-agent

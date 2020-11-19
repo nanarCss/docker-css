@@ -1,0 +1,166 @@
+---
+- hosts: srv-dhcp-master
+  sudo: yes
+
+  tasks:
+
+### NFS CLIENT CONFIGURATION
+
+  - name: Install latest version of "nfs-common"
+    apt:
+      name: nfs-common
+      state: latest
+
+  - name: Creates directory
+    file:
+      path: /share
+      state: directory
+
+  - name: Creates directory
+    file:
+      path: /share/dhcp_client
+      state: directory
+
+  - name: Execute the command
+    shell: sudo mount 10.10.1.40:/share/dhcp/master  /share/dhcp_client
+
+  - lineinfile:
+      dest: /etc/fstab
+      line: '10.10.1.40:/share/dhcp/master   /share/dhcp_client    nfs  _netdev,rw 0 0'
+      
+
+### FQDN CONFIGURATION ###
+
+  - name: delete hosts file
+    file:
+      state: absent
+      path: /etc/hosts
+      
+  - name: create & config hosts file
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost.equipe3.sirt.tp           localhost
+        10.10.1.6       srv-dhcp-master.equipe3.sirt.tp     srv-dhcp-master
+
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+
+
+
+ ### AUTO EDIT RESOLV.CONF ###
+ 
+  - name: install resolvconf
+    apt: 
+      name: resolvconf
+      state: latest
+      
+  - name: edit resolv.conf
+    blockinfile:
+      path: /etc/resolvconf/resolv.conf.d/head
+      block: |
+        nameserver 10.10.1.2
+        nameserver 10.10.1.3
+
+# Install net-tools / nmap / dos2unix
+
+  - name: Install net-tools / nmap / dos2unix
+    apt:
+      name: dos2unix,net-tools,nmap
+      state: latest
+
+### DHCP CONFIGURATION ###
+
+  - name: install isc-dhcp-server
+    apt:
+      name: isc-dhcp-server
+      state: latest
+
+  - name: delete /etc/dhcp/dhcpd.conf
+    file:
+      path: /etc/dhcp/dhcpd.conf
+      state: absent
+      
+  - name: create & config /etc/dhcp/dhcpd.conf
+    copy:
+      dest: /etc/dhcp/dhcpd.conf
+      content: |
+
+       authoritative;
+       # Paramétrage du failover du DHCP Master
+       failover peer "neoflow" {
+       primary;                     # Déclare ce serveur comme master.
+       address 10.10.1.6;           # Adresse du serveur master.
+       port 520;                    # Port d'écoute du serveur master.
+       peer address 10.10.1.7;      # Adresse du serveur slave.
+       peer port 520;               # Port d'écoute du serveur slave.
+       max-response-delay 60;       # Temps de non réponse du slave.
+       max-unacked-updates 10;      # Nombre de mises à jour avant de déclarer le pair en échec
+       mclt 3600;
+       split 128;                   # Répartition des plages d'adresses.
+       load balance max seconds 3;
+       }
+       
+       subnet 10.10.1.0 netmask 255.255.255.0 {
+       pool{
+       failover peer "neoflow";                 # Indique la configuration du failover
+       option domain-name-servers 10.10.1.2;    # Serveur DNS
+       range 10.10.1.100 10.10.1.199;           # Plage d'adresses IP
+       default-lease-time 21600 ;               # Bail de 6 heures par défaut
+       max-lease-time 36000 ;                   # Bail pouvant aller jusqu'à 10 heures
+       }
+       }
+
+  - name: config /etc/default/isc-dhcp-server
+    replace:
+      path: /etc/default/isc-dhcp-server
+      regexp: 'INTERFACESv4=""'
+      replace: 'INTERFACESv4="eth1"'
+      
+  - name: restart dhcp service
+    service:
+      name: isc-dhcp-server
+      state: restarted
+
+  - name: make sure dhcp service is running
+    systemd:
+      name: isc-dhcp-server
+      state: started
+
+
+
+### CRON CONFIG
+
+  - name: create script
+    copy:
+      dest: /usr/bin/backup.sh
+      content: |
+        #!/bin/bash
+        cp /etc/hosts /share/dhcp_client
+        cp /etc/dhcp/dhcpd.conf /share/dhcp_client/
+        cp /etc/resolvconf/resolv.conf.d/head /share/dhcp_client/
+        cp /etc/default/isc-dhcp-server /share/dhcp_client/
+
+  - name: chmod
+    shell : chmod 755 /usr/bin/backup.sh
+
+  - name: config cron
+    cron:                                                                                          
+      minute: "30"
+      hour: "19"
+      day: "*"
+      month: "*"
+      weekday: "1,2,3,4,5"
+      job: /usr/bin/backup.sh
+
+  - name: restart cron
+    shell: /etc/init.d/cron restart
+
+
+
+### Reboot the System ###
+
+  - name: reboot the virtual machine
+    reboot:

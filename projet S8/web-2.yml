@@ -1,0 +1,126 @@
+---
+- hosts: srv-web-2
+  become: yes
+
+  tasks:
+
+### FQDN CONFIGURATION ###
+
+  - name: delete hosts file
+    file:
+      state: absent
+      path: /etc/hosts
+
+  - name: create & config hosts file
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost.equipe3.sirt.tp       localhost
+        10.10.1.15      srv-proxy-1.equipe3.sirt.tp     srv-proxy-1
+        10.10.1.16      srv-proxy-2.equipe3.sirt.tp     srv-proxy-2
+        10.10.1.21      srv-web-1.equipe3.sirt.tp       srv-web-1
+        10.10.1.22      srv-web-2.equipe3.sirt.tp       srv-web-2
+        10.10.1.31      srv-database-1.equipe3.sirt.tp  srv-database-1
+        10.10.1.32      srv-database-2.equipe3.sirt.tp  srv-database-2
+        10.10.1.33      srv-database-3.equipe3.sirt.tp  srv-database-3
+        
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+        
+        
+
+ ### AUTO EDIT RESOLV.CONF ###
+ 
+  - name: install resolvconf
+    apt: 
+      name: resolvconf
+      state: latest
+      
+  - name: edit resolv.conf
+    blockinfile:
+      path: /etc/resolvconf/resolv.conf.d/head
+      block: |
+        nameserver 10.10.1.2
+        nameserver 10.10.1.3
+      
+### LAMP SERVER INSTALLATION ###
+
+  - name: install LAMP server
+    apt:
+      name: mariadb-client,apache2,php,libapache2-mod-php,php-cgi,php-common,php-pear,php-mbstring,php-fpm
+      state: latest
+      
+# Install net-tools / nmap / dos2unix
+
+  - name: Install net-tools / nmap / dos2unix
+    apt:
+      name: dos2unix,net-tools,nmap
+      state: latest
+
+### PHP CONFIGURATION ###
+
+  - name: enable php7.3-cgi
+    command: a2enconf php7.3-cgi
+    
+  - name: enable php7.3-fpm
+    command: a2enconf php7.3-fpm
+
+  - name: edit /etc/php/7.3/apache2/php.ini
+    replace:
+      path: /etc/php/7.3/apache2/php.ini
+      regexp: ';date.timezone ='
+      replace: "date.timezone = 'Europe/Paris'"
+      
+  - name: edit /etc/php/7.3/fpm/php.ini
+    replace:
+      path: /etc/php/7.3/fpm/php.ini
+      regexp: ';cgi.fix_pathinfo=1'
+      replace: 'cgi.fix_pathinfo=0'
+      
+  - name: edit apache2.conf
+    blockinfile:
+      path: /etc/apache2/apache2.conf
+      insertbefore: "#<Directory /srv/>" 
+      block: |
+        <Directory /mnt/www/>
+            Options Indexes FollowSymLinks
+            AllowOverride None
+            Require all granted
+        </Directory>
+        
+  - name: restart Apache2 service
+    service:
+      name: apache2
+      state: restarted
+      
+      
+
+### HAPROXY CONFIGURATION ###
+
+  - name: install HAProxy
+    apt:
+      name: haproxy
+      state: latest
+     
+  - name: config /etc/haproxy/haproxy.cfg
+    blockinfile:
+      dest: /etc/haproxy/haproxy.cfg
+      block: |
+        listen galera
+            bind 127.0.0.1:3306
+            balance leastconn
+            mode tcp
+            option tcpka
+            option mysql-check user haproxy
+            server srv-database-1 10.10.1.31:3306 check weight 1
+            server srv-database-2 10.10.1.32:3306 check weight 1
+            server srv-database-3 10.10.1.33:3306 check weight 1
+        
+
+
+### Reboot the System ###
+
+  - name: reboot srv-web-2
+    reboot:

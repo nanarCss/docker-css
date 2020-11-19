@@ -1,0 +1,218 @@
+---
+- hosts: srv-nfs
+  become: yes
+
+  tasks:
+  
+### FQDN CONFIGURATION ###
+
+  - name: delete hosts file
+    file:
+      state: absent
+      path: /etc/hosts
+
+  - name: create & config hosts file
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost.equipe3.sirt.tp   localhost
+        10.10.1.40      srv-nfs.equipe3.sirt.tp     srv-nfs
+        
+        # The following lines are desirable for IPv6 capable hosts
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+        
+    
+
+### AUTO EDIT RESOLV.CONF ###
+ 
+  - name: install resolvconf
+    apt: 
+      name: resolvconf
+      state: latest
+      
+  - name: edit resolvconf
+    blockinfile:
+      path: /etc/resolvconf/resolv.conf.d/head
+      block: |
+        nameserver 10.10.1.2
+        nameserver 10.10.1.3
+        
+ 
+ 
+ ### GROUPS CONFIGURATION ###
+ 
+  - name: Ensure group "group" exists
+    group:
+      name: group
+      state: present
+
+  - name: Add the user 'personne'
+    user:
+      name: personne
+      group: group
+
+  - name: Creates directory
+    file:
+      path: /share
+      state: directory
+      owner: personne
+      group: group
+ 
+  - name: Creates directory
+    file:
+      path: /share/proxy
+      state: directory
+      owner: personne
+      group: group
+
+  - name: Creates directory
+    file:
+      path: /share/proxy/master
+      state: directory
+      owner: personne
+      group: group
+
+
+  - name: Creates directory
+    file:
+      path: /share/proxy/slave
+      state: directory
+      owner: personne
+      group: group
+      
+  - name: Creates directory
+    file:
+      path: /share/dhcp
+      state: directory
+      owner: personne
+      group: group
+  
+  - name: Creates directory
+    file:
+      path: /share/dhcp/master
+      state: directory
+      owner: personne
+      group: group
+  
+  - name: Creates directory
+    file:
+      path: /share/dhcp/slave
+      state: directory
+      owner: personne
+      group: group
+
+  - name: Creates directory
+    file:
+      path: /share/dns
+      state: directory
+      owner: personne
+      group: group  
+
+  - name: Creates directory
+    file:
+      path: /share/dns/master
+      state: directory
+      owner: personne
+      group: group  
+
+  - name: Creates directory
+    file:
+      path: /share/dns/slave
+      state: directory
+      owner: personne
+      group: group  
+
+  - name: Creates directory
+    file:
+      path: /share/mail
+      state: directory
+      owner: personne
+      group: group  
+
+  - name: Creates directory
+    file:
+      path: /share/web
+      state: directory
+      owner: personne
+      group: group
+
+  - name: Creates directory
+    file:
+      path: /share/database
+      state: directory
+      owner: personne
+      group: group
+
+  - name: Execute the command
+    shell: sudo chmod -R 777 /share
+
+
+
+ ### NFS CONFIGURATION ###
+ 
+  - name: Install latest version of "nfs-kernel-server"
+    apt:
+      name: nfs-kernel-server
+      state: latest
+
+  - name: delete /etc/exports
+    file:
+      path: /etc/exports
+      state: absent
+
+  - name: create & config /etc/exports
+    copy:
+      dest: /etc/exports
+      content: |
+        /share 10.10.1.0/24(rw,sync,no_subtree_check)
+
+  - name: Execute the command
+    shell: sudo exportfs -a
+
+  - name: restart nfs server
+    service: name=nfs-kernel-server state=restarted
+
+
+
+### CRON CONFIG ###
+ 
+  - name: Install latest version of "sshpass"
+    apt:
+      name: sshpass
+      state: latest
+
+  - name: create script
+    copy:
+      dest: /usr/bin/backup.sh
+      content: |
+        #!/bin/bash
+        sshpass -p "vagrant" scp -o StrictHostKeyChecking=no -r /share vagrant@10.10.1.41:~
+
+  - name: chmod
+    shell : chmod 755 /usr/bin/backup.sh
+
+  - name: config cron
+    cron:                                                                                          
+      minute: "31"
+      hour: "19"
+      day: "*"
+      month: "*"
+      weekday: "1,2,3,4,5"
+      job: /usr/bin/backup.sh
+
+  - name: restart cron
+    shell: /etc/init.d/cron restart
+
+# Install net-tools / nmap / dos2unix
+
+  - name: Install net-tools / nmap / dos2unix
+    apt:
+      name: dos2unix,net-tools,nmap
+      state: latest
+
+### Reboot the System ###
+
+  - name: reboot srv-nfs
+    reboot:

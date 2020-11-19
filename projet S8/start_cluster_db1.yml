@@ -1,0 +1,8 @@
+---
+- hosts: srv-database-1
+  become: yes
+
+  tasks:
+
+  - name: run new cluster
+    command: galera_new_cluster
