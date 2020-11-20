@@ -92,22 +92,7 @@
       validate_certs: no
     loop: "{{ lookup('dict', additional_volumes|default({}), wantlist=True) }}"
     when: additional_volumes is defined and (additional_volumes|length>0)
-      
-
-  - name: Wait for SSH on the Instance
-    command: >
-      ssh -i /root/.ssh/ansible -oBatchMode=yes -oStrictHostKeyChecking=no ansible@{{instance.openstack.private_v4}} true
-    register: result
-    until: result is succeeded
-    retries: 30
-    delay: 10
-
-  - name: Add Instance to Ansible in-memory Inventory
-    add_host:
-      name: "{{ instance_name }}"
-      groups: "{{ openstack_project }}"
-      ansible_ssh_host: "{{ instance.openstack.private_v4 }}" 
-
+     
 - hosts: srvproxy
 
   tasks:
