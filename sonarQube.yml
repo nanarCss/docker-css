@@ -1,0 +1,213 @@
+---
+- hosts: sonarQube
+  become: yes
+
+  tasks:
+
+### SYSTEM CONFIGURATION ###
+
+  - name: apt update
+    become: true
+    apt:
+      upgrade: yes
+      update_cache: yes
+      
+  - name: edit sysctl.conf
+    blockinfile:
+      path: /etc/sysctl.conf
+      block: |
+        vm.max_map_count=262144
+        fs.file-max=65536
+        ulimit -n 65536
+        ulimit -u 4096
+
+  - name: edit limits.conf
+    blockinfile:
+      path: /etc/security/limits.conf
+      block: |
+        sonarqube   -   nofile   65536
+        sonarqube   -   nproc    4096
+
+  - name: reboot srv-sonarQube
+    reboot:
+
+
+
+### INITIAL CONFIGURATION ###
+
+  - name: install latest version of Java
+    apt:
+      name: default-jre, default-jdk
+      state: latest
+      
+  - name: install trusted GPG key
+    command: wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add
+    
+  - name: create a repository file for PostgreSQL
+    command: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+    
+ 
+### POSTGRESQL CONFIGURATION ###
+
+  - name: install PostgreSQL
+    apt:
+      name: postgresql,postgresql-contrib,curl
+      state: latest
+
+  - name: enable PostgreSQL service
+    command: systemctl enable postgresql.service
+    
+  - name: start PostgreSQL service
+    command: systemctl start  postgresql.service
+
+  - name: change PostgreSQL password
+    expect:
+      command: passwd postgres
+      responses:
+        Question:
+          - N3twork!
+          - N3twork!
+   
+  - name: switch to postgres user
+    command: su - postgres
+    
+  - name: create a sonar user
+    command: createuser sonar
+    
+    
+  - name: config PostgreSQL environment
+    shell: |
+      psql
+      ALTER USER sonar WITH ENCRYPTED PASSWORD 'N3twork!';
+      CREATE DATABASE sonarqube OWNER sonar;
+      GRANT ALL PRIVILEGES ON DATABASE sonarqube to sonar;
+      \q
+      exit
+
+  - name: restart PostgreSQL
+    command: systemctl restart postgresql
+    
+  - name: check PostgreSQL status
+    command: systemctl status -l postgresql
+
+
+
+### SONARQUBE CONFIGURATION ###
+
+  - name: install Curl & Zip
+    apt:
+      name: curl,zip
+      state: latest
+      
+  - name: download SonarQube archive
+    shell: |
+      mkdir /sonarqube/
+      cd /sonarqube/
+      curl -O https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-8.3.0.34182.zip
+      unzip sonarqube-8.3.0.34182.zip -d /opt/
+      mv /opt/sonarqube-8.3.0.34182/ /opt/sonarqube
+
+  - name: create a system group "sonar"
+    command: groupadd sonar
+  
+  - name: create a user and add it to the group
+    command: useradd -c "SonarQube - User" -d /opt/sonarqube/ -g sonar sonar  
+
+  - name: provide ownership to “/opt/sonarqube/”
+    command: chown sonar:sonar /opt/sonarqube/ -R
+    
+
+  - name: edit 1 /opt/sonarqube/conf/sonar.properties 
+    replace:
+      path: /opt/sonarqube/conf/sonar.properties
+      regexp: '#sonar.jdbc.username='
+      replace: 'sonar.jdbc.username=sonar'
+
+  - name: edit 2 /opt/sonarqube/conf/sonar.properties
+    replace:
+      path: /opt/sonarqube/conf/sonar.properties
+      regexp: '#sonar.jdbc.password='
+      replace: 'sonar.jdbc.password=N3twork!'
+      
+  - name: edit 3 /opt/sonarqube/conf/sonar.properties
+    replace:
+      path: /opt/sonarqube/conf/sonar.properties
+      regexp: '#sonar.jdbc.url=jdbc:oracle:thin:@localhost:1521/XE'
+      replace: 'sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube'     
+  - name: edit 4 /opt/sonarqube/conf/sonar.properties
+    replace:
+      path: /opt/sonarqube/conf/sonar.properties
+      regexp: '#sonar.web.javaOpts=-Xmx512m -Xms128m -XX:+HeapDumpOnOutOfMemoryError'
+      replace: 'sonar.search.javaOpts=-Xmx512m -Xms512m -XX:+HeapDumpOnOutOfMemoryError'  
+      
+  - name: create & config sonarqube.service
+    copy:
+      dest: /etc/systemd/system/sonarqube.service
+      content: |
+        [Unit]
+        Description=SonarQube service
+        After=syslog.target network.target
+
+        [Service]
+        Type=forking
+
+        ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+        ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+
+        User=sonar
+        Group=sonar
+        Restart=always
+
+        LimitNOFILE=65536
+        LimitNPROC=4096
+
+
+        [Install]
+        WantedBy=multi-user.target
+  
+  - name: Enable & Start SonarQube Service
+    shell: |
+      systemctl daemon-reload 
+      systemctl enable sonarqube.service
+      systemctl start sonarqube.service
+       
+
+
+### NGINX REVERSE PROXY CONFIGURATION ###       
+       
+  - name: install Nginx
+    apt:
+      name: nginx
+      state: latest   
+        
+  - name: create & config sonarqube.conf
+    copy:
+      dest: /etc/nginx/sites-enabled/sonarqube.conf
+      content: |      
+        server{
+            listen      80;
+            server_name sonarqube;
+
+            access_log  /var/log/nginx/sonar.access.log;
+            error_log   /var/log/nginx/sonar.error.log;
+
+            proxy_buffers 16 64k;
+            proxy_buffer_size 128k;
+
+            location / {
+                proxy_pass  http://127.0.0.1:9000;
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+                proxy_redirect off;
+
+                proxy_set_header    Host            $host;
+                proxy_set_header    X-Real-IP       $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    X-Forwarded-Proto http;
+            }
+        }      
+      
+  - name: Enable & Start SonarQube Service
+    shell: |      
+      systemctl enable nginx.service 
+      systemctl restart nginx.service
+
