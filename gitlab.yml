@@ -1,0 +1,64 @@
+---
+
+- hosts: all
+  become: yes
+
+  tasks:
+
+  ## Install the dependencies
+
+  - name: apt update
+    become: true
+    apt:
+      upgrade: yes
+      update_cache: yes
+
+  - name: apt install ca-certificates, openssh-server postfix
+    apt:
+      name: ca-certificates,openssh-server postfix
+      state: present
+
+  ## Installing GitLab
+  
+  - name: Download GitLab
+    get_url:
+      url: https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh
+      dest: /tmp
+  
+  - name: Run script
+    command: bash /tmp/script.deb.sh
+
+  - name: Install gitlab-ce
+    apt:
+      name: gitlab-ce
+
+  ## Adjusting the firewall Rules
+
+  - name: Install UFW
+    apt:
+      name: ufw
+      state: present
+
+  - name: Allow all access to tcp port 80
+    ufw:
+      rule: allow
+      port: '80'
+      proto: tcp
+
+  - name: Allow all access to tcp port 443
+    ufw:
+      rule: allow
+      port: '443'
+      proto: tcp
+   
+  - name: Allow OpenSSH
+    ufw:
+      rule: allow
+      name: OpenSSH
+
+  ## Editing the GitLab configuration file
+
+  
+
+  
+  
