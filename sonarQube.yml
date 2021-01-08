@@ -41,7 +41,7 @@
       state: latest
       
   - name: install trusted GPG key
-    apt-key:
+    apt_key:
       url: http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
       state: present
     
