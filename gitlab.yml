@@ -13,7 +13,7 @@
       upgrade: yes
       update_cache: yes
 
-  - name: apt install ca-certificates, openssh-server postfix
+  - name: apt install ca-certificates,openssh-server,postfix
     apt:
       name: ca-certificates,openssh-server postfix
       state: present
