@@ -61,6 +61,11 @@
     
   - name: start PostgreSQL service
     command: systemctl start  postgresql.service
+  
+  - name: install pexpect (module needed by expect ansible)
+    apt:
+      name: python-pexpect
+      state: present
 
   - name: change PostgreSQL password
     expect:
