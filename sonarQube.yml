@@ -72,8 +72,8 @@
       command: passwd postgres
       responses:
         Question:
-        (?i)Enter new UNIX password : "N3twork!"
-        (?i)Enter new UNIX password : "N3twork!"
+        (?i)Enter new UNIX password: "N3twork!"
+        (?i)Retype new UNIX password: "N3twork!"
    
   - name: switch to postgres user
     command: su - postgres
