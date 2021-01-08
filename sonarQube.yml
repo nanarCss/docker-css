@@ -67,8 +67,9 @@
       command: passwd postgres
       responses:
         Question:
-          - N3twork!
-          - N3twork!
+        (?i)Entrez le nouveau mot de passe UNIX : "N3twork!"
+        (?i)Entrez le nouveau mot de passe UNIX : "N3twork!"
+    no_log: true
    
   - name: switch to postgres user
     command: su - postgres
