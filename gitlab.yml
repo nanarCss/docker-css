@@ -15,7 +15,7 @@
 
   - name: apt install ca-certificates,openssh-server,postfix
     apt:
-      name: ca-certificates,openssh-server postfix
+      name: ca-certificates,openssh-server,postfix
       state: present
 
   ## Installing GitLab
