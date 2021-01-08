@@ -1,5 +1,5 @@
 ---
-- hosts: sonarQube
+- hosts: all
   become: yes
 
   tasks:
