@@ -91,7 +91,6 @@
     postgresql_db: 
       name: sonarqube
       owner: sonar
-      encoding: UTF-8
   
   - name: Grant ALL priveleges to sonar user on sanarqube db
     become: yes
