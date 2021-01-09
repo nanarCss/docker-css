@@ -83,7 +83,7 @@
     become_user: postgres
     postgresql_user:
       name: "sonar"
-      password: "N3twork"
+      password: "N3twork!"
   
   - name: Create sonarqube database
     become: yes
