@@ -12,6 +12,11 @@
       upgrade: yes
       update_cache: yes
       
+  - name: install psycopg2
+    pip:
+      name: psycopg2
+      state: present
+      
   - name: edit sysctl.conf
     blockinfile:
       path: /etc/sysctl.conf
