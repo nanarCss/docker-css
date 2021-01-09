@@ -11,7 +11,7 @@
     apt:
       upgrade: yes
       update_cache: yes
-      
+
   - name: install psycopg2
     apt:
       name: python-psycopg2
@@ -83,16 +83,19 @@
         (?i)Enter new UNIX password: "N3twork!"
         (?i)Retype new UNIX password: "N3twork!"
 
-  - name: Create postgres user
-
+  - name: Create sonar user on postgresql
     postgresql_user:
       name: "sonar"
       password: "N3twork!"
+    become: yes
+    become_user: postgres
   
   - name: Create sonarqube database
     postgresql_db: 
       name: sonarqube
       owner: sonar
+    become: yes
+    become_user: postgres
   
   - name: Grant ALL priveleges to sonar user on sanarqube db
     postgresql_privs:
@@ -101,6 +104,8 @@
       objs: ALL_IN_SCHEMA
       privs: ALL
       type: database
+    become: yes
+    become_user: postgres
 
   - name: restart PostgreSQL
     command: systemctl restart postgresql
