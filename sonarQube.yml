@@ -40,6 +40,9 @@
       name: default-jre, default-jdk
       state: latest
       
+  # - name: install trusted GPG key
+  # command: wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add
+
   - name: install trusted GPG key
     apt_key:
       url: http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
@@ -61,43 +64,48 @@
     
   - name: start PostgreSQL service
     command: systemctl start  postgresql.service
-  
+
   - name: install pexpect (module needed by expect ansible)
     apt:
       name: python-pexpect
       state: present
 
-  - name: change PostgreSQL password
+  - name: change PostgreSQL User password
     expect:
       command: passwd postgres
       responses:
         Question:
         (?i)Enter new UNIX password: "N3twork!"
         (?i)Retype new UNIX password: "N3twork!"
-   
-  - name: switch to postgres user
-    command: su - postgres
-    
-  - name: create a sonar user
-    command: createuser sonar
-    
-    
-  - name: config PostgreSQL environment
-    shell: |
-      psql
-      ALTER USER sonar WITH ENCRYPTED PASSWORD 'N3twork!';
-      CREATE DATABASE sonarqube OWNER sonar;
-      GRANT ALL PRIVILEGES ON DATABASE sonarqube to sonar;
-      \q
-      exit
+
+  - name: Create postgres user
+    become: yes
+    become_user: postgres
+    postgresql_user:
+      name: "sonar"
+      password: "N3twork"
+  
+  - name: Create sonarqube database
+    become: yes
+    become_user: postgres
+    postgresql_db: 
+      name: sonarqube
+      owner: sonar
+      encoding: UTF-8
+  
+  - name: Grant ALL priveleges to sonar user on sanarqube db
+    become: yes
+    become_user: postgres
+    postgresql_privs:
+      db: sonarqube
+      role: sonar
+      objs: ALL_IN_SCHEMA
+      privs: ALL
+      type: database
 
   - name: restart PostgreSQL
     command: systemctl restart postgresql
     
-  - name: check PostgreSQL status
-    command: systemctl status -l postgresql
-
-
 
 ### SONARQUBE CONFIGURATION ###
 
