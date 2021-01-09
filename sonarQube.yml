@@ -13,8 +13,8 @@
       update_cache: yes
       
   - name: install psycopg2
-    pip:
-      name: psycopg2
+    apt:
+      name: python-psycopg2
       state: present
       
   - name: edit sysctl.conf
