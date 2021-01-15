@@ -92,8 +92,6 @@
     postgresql_db: 
       name: sonarqube
       owner: sonar
-    become: yes
-    become_user: postgres
   
   - name: Grant ALL priveleges to sonar user on sanarqube db
     postgresql_privs:
