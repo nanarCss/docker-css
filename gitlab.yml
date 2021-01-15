@@ -63,8 +63,8 @@
     lineinfile:
       path: /etc/gitlab/gitlab.rb
       state: present
-      regexp: 'external_url 'http://example.com''
-      line: 'external_url 'https://srv-gital-awx.com''
+      regexp: "external_url 'http://example.com'"
+      line: "external_url 'https://srv-gital-awx.com'"
       backrefs: yes
     
   - name: set letsencrypt
