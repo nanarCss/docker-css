@@ -100,7 +100,8 @@
         (?i)Retype new UNIX password: "N3twork!"
 
 - hosts: all
-  remote_user: postgres
+  become: yes
+  become_user: postgres
 
   tasks:
 
