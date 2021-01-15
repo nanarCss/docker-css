@@ -75,6 +75,19 @@
       name: python-pexpect
       state: present
 
+  - name: Configure LANG of postgres
+    copy:
+      dest: /etc/default/locale
+      content: |
+        LC_ALL=en_US.UTF-8
+        LC_CTYPE=en_US.UTF-8
+        LC_MESSAGES=en_US.UTF-8
+        LANG=en_US.UTF-8
+        LANGUAGE=en_US.UTF-8
+
+  - name: Generate local
+    command: locale-gen "en_US.UTF-8"
+
   - name: change PostgreSQL User password
     expect:
       command: passwd postgres
