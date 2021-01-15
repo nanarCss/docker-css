@@ -83,15 +83,16 @@
         (?i)Enter new UNIX password: "N3twork!"
         (?i)Retype new UNIX password: "N3twork!"
 
-  - name: Create sonar user on postgresql
-    postgresql_user:
-      name: "sonar"
-      password: "N3twork!"
-  
   - name: Create sonarqube database
     postgresql_db: 
       name: sonarqube
       owner: sonar
+
+  - name: Create sonar user on postgresql
+    postgresql_user:
+      name: "sonar"
+      password: "N3twork!"
+      db: sonarqube
   
   - name: Grant ALL priveleges to sonar user on sanarqube db
     postgresql_privs:
