@@ -102,8 +102,6 @@
       objs: ALL_IN_SCHEMA
       privs: ALL
       type: database
-    become: yes
-    become_user: postgres
 
   - name: restart PostgreSQL
     command: systemctl restart postgresql
