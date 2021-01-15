@@ -80,8 +80,16 @@
       name: en_US.UTF-8
       state: present
 
-  - name: set as default locale
-    command: localectl set-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+  - name: edit /etc/default/locale
+    copy:
+      dest: /etc/default/locale
+      content: |
+        # The en_US UTF8 by default locale
+        LC_ALL=en_US.UTF-8
+        LC_CTYPE=en_US.UTF-8
+        LC_MESSAGES=en_US.UTF-8
+        LANG=en_US.UTF-8
+        LANGUAGE=en_US.UTF-8
 
   - name: change PostgreSQL User password
     expect:
