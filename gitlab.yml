@@ -56,3 +56,6 @@
     ufw:
       rule: allow
       name: OpenSSH
+
+  - name: gitlab reconfigure
+    command: gitlab-ctl reconfigure
