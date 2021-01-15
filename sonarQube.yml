@@ -99,35 +99,30 @@
         (?i)Enter new UNIX password: "N3twork!"
         (?i)Retype new UNIX password: "N3twork!"
 
-- hosts: all
-  become: yes
-  become_user: postgres
-
-  tasks:
-
   - name: Create sonarqube database
+    become: yes
+    become_user: postgres
     postgresql_db: 
       name: sonarqube
       owner: sonar
 
   - name: Create sonar user on postgresql
+    become: yes
+    become_user: postgres
     postgresql_user:
       name: "sonar"
       password: "N3twork!"
       db: sonarqube
   
   - name: Grant ALL priveleges to sonar user on sanarqube db
+    become: yes
+    become_user: postgres
     postgresql_privs:
       db: sonarqube
       role: sonar
       objs: ALL_IN_SCHEMA
       privs: ALL
       type: database
-
-- hosts: all
-  become: yes
-
-  tasks: 
 
   - name: restart PostgreSQL
     command: systemctl restart postgresql
