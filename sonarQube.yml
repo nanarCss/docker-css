@@ -4,7 +4,7 @@
 
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    
+
   tasks:
 
 ### SYSTEM CONFIGURATION ###
@@ -103,11 +103,11 @@
         (?i)Retype new password: "N3twork!"
 
   - name: Create sonarqube database
-    become: yes
-    become_user: postgres
     postgresql_db: 
       name: sonarqube
       owner: sonar
+    become_user: postgres
+    become: yes
 
   - name: Create sonar user on postgresql
     become: yes
