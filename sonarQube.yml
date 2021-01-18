@@ -1,7 +1,7 @@
 ---
 - hosts: all
   become: yes
-  
+
   tasks:
 
 ### SYSTEM CONFIGURATION ###
@@ -104,22 +104,20 @@
       name: sudo
       state: present
 
-          
+  - name: Create sonar user on postgresql
+    become: yes
+    become_user: postgres
+    postgresql_user:
+      name: "sonar"
+      password: "N3twork!" 
+
   - name: Create sonarqube database
     postgresql_db: 
       name: sonarqube
       owner: sonar
     become_user: postgres
     become: yes
-
-  - name: Create sonar user on postgresql
-    become: yes
-    become_user: postgres
-    postgresql_user:
-      name: "sonar"
-      password: "N3twork!"
-      db: sonarqube
-  
+ 
   - name: Grant ALL priveleges to sonar user on sanarqube db
     become: yes
     become_user: postgres
