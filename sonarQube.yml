@@ -2,6 +2,9 @@
 - hosts: all
   become: yes
 
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    
   tasks:
 
 ### SYSTEM CONFIGURATION ###
@@ -101,7 +104,6 @@
 
   - name: Create sonarqube database
     become: yes
-    become_method: su
     become_user: postgres
     postgresql_db: 
       name: sonarqube
@@ -109,7 +111,6 @@
 
   - name: Create sonar user on postgresql
     become: yes
-    become_method: su
     become_user: postgres
     postgresql_user:
       name: "sonar"
@@ -118,7 +119,6 @@
   
   - name: Grant ALL priveleges to sonar user on sanarqube db
     become: yes
-    become_method: su
     become_user: postgres
     postgresql_privs:
       db: sonarqube
