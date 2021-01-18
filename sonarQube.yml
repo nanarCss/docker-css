@@ -102,6 +102,12 @@
         (?i)New password: "N3twork!"
         (?i)Retype new password: "N3twork!"
 
+  - name: install sudo
+    apt:
+      name: sudo
+      state: present
+
+          
   - name: Create sonarqube database
     postgresql_db: 
       name: sonarqube
