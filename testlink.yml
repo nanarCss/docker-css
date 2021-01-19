@@ -26,8 +26,6 @@
       src: /tmp/testlink.tar.gz
       dest: /tmp
       copy: no
-      owner: "{{ nginx_user }}"
-      group: "{{ nginx_user }}"
 
   # Create TestLink workspace
   - name: check testlink temp path
