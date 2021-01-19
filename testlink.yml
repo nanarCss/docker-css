@@ -59,6 +59,12 @@
       path: "/tmp/testlink-{{ testlink_tarball_version }}"
     register: unarchive_testlink_stat
 
+  - name: remove old files of ngninx directory
+    file:
+      path: /nginx
+      state: absent
+
+
   # In case of destination directory already exists, mv will create a sub directory inside the destination directory
   - name: move testlink directory into nginx
     become: true
