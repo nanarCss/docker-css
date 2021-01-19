@@ -22,7 +22,7 @@
       dest: /tmp/testlink.tar.gz
 
   - name: install pip
-    command: apt install python3-pip
+    command: apt install python3-pip -y
 
   - name: Make sure pymysql is present
     pip:
