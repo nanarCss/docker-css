@@ -93,7 +93,6 @@
       state: present
       encoding: utf8
       collation: utf8_general_ci
-    when: setup_local_database == true
     tags:
       - database
 
@@ -121,7 +120,6 @@
       state: present
       password: "{{ testlink_db_password }}"
       priv: "{{ testlink_db_name }}.*:ALL"
-    when: setup_local_database == true
     ignore_errors: yes
     tags:
       - database
