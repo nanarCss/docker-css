@@ -22,9 +22,7 @@
       dest: /tmp/testlink.tar.gz
 
   - name: install pip
-    yum:
-      pkg: python-pip,pip
-      state: present
+    command: apt install python3-pip
 
   - name: Make sure pymysql is present
     pip:
