@@ -22,12 +22,10 @@
       dest: /tmp/testlink.tar.gz
 
   - name: install pip
-    command: apt-get install python-pip -y
+    command: apt install python-pip -y
 
   - name: Make sure pymysql is present
-    pip:
-      name: pymysql
-      state: present
+    command: pip3 install pymysql
 
   - name: create admin group
     group:
@@ -71,7 +69,6 @@
     file:
       path: /nginx
       state: absent
-
 
   # In case of destination directory already exists, mv will create a sub directory inside the destination directory
   - name: move testlink directory into nginx
