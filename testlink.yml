@@ -20,7 +20,6 @@
     get_url:
       url: "{{ testlink_tarball_url }}"
       dest: /tmp/testlink.tar.gz
-      checksum: "md5:{{ testlink_tarball_md5 }}"
 
   - name: unarchive testlink tarball
     unarchive:
