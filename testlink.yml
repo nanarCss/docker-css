@@ -21,6 +21,16 @@
       url: "{{ testlink_tarball_url }}"
       dest: /tmp/testlink.tar.gz
 
+  - name: install pip
+    apt:
+      name: pip
+      state: present
+
+  - name: Make sure pymysql is present
+    pip:
+      name: pymysql
+      state: present
+
   - name: create admin group
     group:
       name: "{{ nginx_user }}"
