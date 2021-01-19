@@ -23,7 +23,7 @@
 
   - name: install pip
     apt:
-      name: python2-pip
+      name: python2.7-pip
       state: present
 
   - name: Make sure pymysql is present
