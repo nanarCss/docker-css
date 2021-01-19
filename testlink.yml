@@ -104,7 +104,6 @@
       name: "{{ testlink_db_name }}"
       state: import
       target: /tmp/testlink-1.9.19-db-withCamillesTestProject.sql
-    when: setup_local_database == true
     ignore_errors: yes
     tags:
       - database
