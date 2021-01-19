@@ -1,0 +1,99 @@
+---
+- hosts: all
+  become: yes
+
+  vars: 
+    testlink_tarball_url: 'https://downloads.sourceforge.net/project/testlink/TestLink%201.9/TestLink%201.9.19/testlink-1.9.19.tar.gz'
+    testlink_tarball_md5: 'https://downloads.sourceforge.net/project/testlink/TestLink%201.9/TestLink%201.9.19/testlink-1.9.19.tar.gz.md5'
+    testlink_tarball_version: '1.9.19'
+    testlink_var_path: '/var/testlink'
+    testlink_db_name: 'testlinkDB'
+    testlink_db_user: 'userTL'
+    testlink_db_password: 'N3twork!'
+    nginx_testlink_path: '/nginx'
+    nginx_user: 'admin'
+    item: '/testlink'
+
+  tasks:
+  
+  - name: download testlink tarball
+    get_url:
+      url: "{{ testlink_tarball_url }}"
+      dest: /tmp/testlink.tar.gz
+      checksum: "md5:{{ testlink_tarball_md5 }}"
+
+  - name: unarchive testlink tarball
+    unarchive:
+      src: /tmp/testlink.tar.gz
+      dest: /tmp
+      copy: no
+      owner: "{{ nginx_user }}"
+      group: "{{ nginx_user }}"
+
+  # Create TestLink workspace
+  - name: check testlink temp path
+    stat:
+      path: "/tmp/testlink-{{ testlink_tarball_version }}"
+    register: unarchive_testlink_stat
+
+  # In case of destination directory already exists, mv will create a sub directory inside the destination directory
+  - name: move testlink directory into nginx
+    become: true
+    command: mv /tmp/testlink-{{ testlink_tarball_version }} {{ nginx_testlink_path }}
+    when: unarchive_testlink_stat.stat.exists
+    ignore_errors: yes
+
+  # Read/write permissions
+  - name: create testlink directory
+    become: true
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: "{{ nginx_user }}"
+      group: "{{ nginx_user }}"
+      mode: 0775
+    with_items:
+      - '{{ testlink_var_path }}'
+      - '{{ testlink_var_path }}/logs/'
+      - '{{ testlink_var_path }}/upload_area/'
+
+  # Database
+  - name: create testlink database
+    mysql_db:
+      name: "{{ testlink_db_name }}"
+      state: present
+      encoding: utf8
+      collation: utf8_general_ci
+    when: setup_local_database == true
+    tags:
+      - database
+
+  - name: Copy our database to server
+    copy:
+      src: testlink-1.9.19-db-withCamillesTestProject.sql
+      dest: /tmp/
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: create testlink table and data
+    mysql_db:
+      name: "{{ testlink_db_name }}"
+      state: import
+      target: /tmp/testlink-1.9.19-db-withCamillesTestProject.sql
+    when: setup_local_database == true
+    ignore_errors: yes
+    tags:
+      - database
+
+  - name: create user for testlink database
+    mysql_user:
+      name: "{{ testlink_db_user }}"
+      host: localhost
+      state: present
+      password: "{{ testlink_db_password }}"
+      priv: "{{ testlink_db_name }}.*:ALL"
+    when: setup_local_database == true
+    ignore_errors: yes
+    tags:
+      - database
