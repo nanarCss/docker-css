@@ -32,6 +32,11 @@
       comment: user admin for nginx
       group: "{{ nginx_user }}"
   
+  - name: install pexpect (module needed by expect ansible)
+    apt:
+      name: python-pexpect
+      state: present
+  
   - name: change admin User password
     expect:
       command: passwd admin
