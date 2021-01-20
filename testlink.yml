@@ -10,20 +10,88 @@
     testlink_db_name: 'testlinkDB'
     testlink_db_user: 'userTL'
     testlink_db_password: 'N3twork!'
-    nginx_testlink_path: '/nginx'
+    nginx_testlink_path: '/var/www/testlink'
     nginx_user: 'admin'
     item: '/testlink'
     ansible_python_interpreter: /usr/bin/python3
+    mysql_root_password: 'N3twork!'
 
   tasks:
 
 
 ### LAMP SERVER INSTALLATION ###
 
-  - name: install LAMP server
+  - name: install Mysql server
     apt:
-      name: mysql-server,libmysqld-dev,nginx,php-cgi,php-common,php-pear,php-mbstring,php-fpm
+      name: mysql-server,libmysqld-dev
       state: latest
+
+  - name: Add Nginx to source.list
+    lineinfile:
+      path: /etc/apt/sources.list
+      line: 'deb http://nginx.org/packages/mainline/debian/ stretch nginx'
+    
+  - name: Import Nginx repository’s package signing key and add it to apt
+    apt_key:
+      url: http://nginx.org/keys/nginx_signing.key
+      state: present
+    
+  - name: apt upgrade & update
+    shell: apt-get upgrade -y; apt-get update
+
+  - name: Install NGINX
+    apt: 
+      name: nginx 
+      state: latest
+
+  - name: start nginx
+    service:
+      name: nginx
+      state: started
+    
+  - name: Enable service nginx
+    ansible.builtin.systemd:
+      name: nginx
+      enabled: yes
+    
+  - name: Enable ufw
+    ufw: state=enabled
+    
+  - name: changing default incoming policy to 'deny'
+    shell: sudo ufw default deny
+    
+  - name: autoriser les connexions à Nginx
+    ufw: 
+      rule: allow
+      name: 'Nginx HTTP'  
+
+  - name: PHP install
+    apt:
+      name: php7.0-fpm
+
+  - name: sed lines
+    command: "{{ item }}"
+    with_items:
+        - sudo sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/7.0/fpm/php.ini
+        - sudo sed -i 's/listen.owner = www-data/listen.owner = nginx/g' /etc/php/7.0/fpm/pool.d/www.conf
+        - sudo sed -i 's/listen.group = www-data/listen.group = nginx/g' /etc/php/7.0/fpm/pool.d/www.conf
+    
+  - name: Create directory if it does not exist
+    ansible.builtin.file:
+      path: /var/www/testlink/
+      state: directory
+      mode: '0755'
+
+  - name: Move file
+    command: sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
+    
+  - name: Copy our testlink conf file to server
+    copy:
+      src: templates/testlink.conf
+      dest: /etc/nginx/conf.d
+      owner: root
+      group: root
+      mode: 0644
   
   - name: download testlink tarball
     get_url:
