@@ -53,6 +53,11 @@
     ansible.builtin.systemd:
       name: nginx
       enabled: yes
+
+  - name: Install ufw
+    apt:
+      name: ufw
+      state: present
     
   - name: Enable ufw
     ufw: state=enabled
