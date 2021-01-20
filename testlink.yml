@@ -89,9 +89,15 @@
       state: directory
       mode: '0755'
 
-  - name: Move file
-    command: mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
+  - name: stat default.conf
+    stat:
+      path: /etc/nginx/conf.d/default.conf
+      register: default_conf_present
     
+  - name: rename default.conf if exists
+    command: mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
+    when: default_conf_present
+
   - name: Copy our testlink conf file to server
     copy:
       src: templates/testlink.conf
