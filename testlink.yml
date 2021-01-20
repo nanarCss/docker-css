@@ -132,7 +132,6 @@
       state: import
       target: /tmp/testlink-1.9.19-db-withCamillesTestProject.sql
       login_unix_socket: /var/run/mysqld/mysqld.sock
-    ignore_errors: yes
 
   - name: create user for testlink database
     mysql_user:
@@ -142,4 +141,3 @@
       password: "{{ testlink_db_password }}"
       priv: "{{ testlink_db_name }}.*:ALL"
       login_unix_socket: /var/run/mysqld/mysqld.sock
-    ignore_errors: yes
