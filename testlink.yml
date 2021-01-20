@@ -17,14 +17,12 @@
 
   tasks:
 
-  - name: install pip
-    command: apt install python-pip -y
 
 ### LAMP SERVER INSTALLATION ###
 
   - name: install LAMP server
     apt:
-      name: mariadb-server,libmariadb-dev,nginx,php-cgi,php-common,php-pear,php-mbstring,php-fpm
+      name: mysql-server,libmysqld-dev,nginx,php-cgi,php-common,php-pear,php-mbstring,php-fpm
       state: latest
   
   - name: download testlink tarball
@@ -32,8 +30,8 @@
       url: "{{ testlink_tarball_url }}"
       dest: /tmp/testlink.tar.gz
 
-  - name: install pip
-    command: apt install python-pip -y
+  - name: install pip3
+    command: apt install python3-pip -y
   
   - name: Make sure pymysql is present
     command: pip3 install pymysql
@@ -104,9 +102,9 @@
 
   # Database
 
-  - name: Ensure mariadb is running and starts on boot
+  - name: Ensure mysql is running and starts on boot
     service:
-      name: mariadb
+      name: mysql
       state: started
       enabled: yes
 
@@ -141,3 +139,15 @@
       password: "{{ testlink_db_password }}"
       priv: "{{ testlink_db_name }}.*:ALL"
       login_unix_socket: /var/run/mysqld/mysqld.sock
+
+  - name: import secure installation of mysql
+    copy:
+      src: templates/install&secure_mysql.sh
+      dest: /tmp/
+      owner: root
+      group: root
+      mode: 0644
+  
+  - name: execute .sh file
+    command: sh /tmp/install&secure_mysql.sh
+  
