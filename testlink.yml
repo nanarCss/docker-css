@@ -22,7 +22,7 @@
 
   - name: install Mysql server
     apt:
-      name: mysql-server,libmariadb-dev,mysql-client,python-mysql,python3-mysql
+      name: mysql-server,libmariadb-dev,mysql-client,python-pymysql,python3-pymysql
       state: latest
 
   - name: Add Nginx to source.list
