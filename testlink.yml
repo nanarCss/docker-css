@@ -20,10 +20,6 @@
   - name: install pip
     command: apt install python-pip -y
 
-  - name: install ansible
-    pip: 
-      name: ansible
-
 ### LAMP SERVER INSTALLATION ###
 
   - name: install LAMP server
