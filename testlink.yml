@@ -61,10 +61,7 @@
     
   - name: Enable ufw
     ufw: state=enabled
-    
-  - name: changing default incoming policy to 'deny'
-    shell: ufw default deny
-    
+      
   - name: autoriser les connexions à Nginx
     ufw: 
       rule: allow
