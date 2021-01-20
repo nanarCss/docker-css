@@ -90,9 +90,8 @@
       mode: '0755'
 
   - name: stat default.conf
-    stat:
-      path: /etc/nginx/conf.d/default.conf
-      register: default_conf_present
+    stat: path= /etc/nginx/conf.d/default.conf
+    register: default_conf_present
     
   - name: rename default.conf if exists
     command: mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
