@@ -20,7 +20,7 @@
 
   - name: install LAMP server
     apt:
-      name: mariadb-client,nginx,php-cgi,php-common,php-pear,php-mbstring,php-fpm
+      name: mariadb-server,nginx,php-cgi,php-common,php-pear,php-mbstring,php-fpm
       state: latest
   
   - name: download testlink tarball
