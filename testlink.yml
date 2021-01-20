@@ -120,7 +120,7 @@
 
   - name: download sql file
     get_url:
-      url: https://github.com/nanarCss/docker-css/blob/main/sql/testlink-1.9.19-db-withCamillesTestProject.sql
+      url: https://github.com/nanarCss/docker-css/sql/testlink-1.9.19-db-withCamillesTestProject.sql
       dest: /tmp/
 
   - name: create testlink table and data
