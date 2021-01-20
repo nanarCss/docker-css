@@ -103,12 +103,20 @@
       - '{{ testlink_var_path }}/upload_area/'
 
   # Database
+
+  - name: Ensure mariadb is running and starts on boot
+    service:
+      name: mariadb
+      state: started
+      enabled: yes
+
   - name: create testlink database
     mysql_db:
       name: "{{ testlink_db_name }}"
       state: present
       encoding: utf8
       collation: utf8_general_ci
+      login_unix_socket: /var/lib/mysql/mysql.sock
 
   - name: Copy our database to server
     copy:
@@ -123,6 +131,7 @@
       name: "{{ testlink_db_name }}"
       state: import
       target: /tmp/testlink-1.9.19-db-withCamillesTestProject.sql
+      login_unix_socket: /var/lib/mysql/mysql.sock
     ignore_errors: yes
 
   - name: create user for testlink database
@@ -132,4 +141,5 @@
       state: present
       password: "{{ testlink_db_password }}"
       priv: "{{ testlink_db_name }}.*:ALL"
+      login_unix_socket: /var/lib/mysql/mysql.sock
     ignore_errors: yes
