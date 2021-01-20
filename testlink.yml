@@ -120,7 +120,7 @@
 
   - name: Copy our database to server
     copy:
-      src: /sql/testlink-1.9.19-db-withCamillesTestProject.sql
+      src: templates/testlink-1.9.19-db-withCamillesTestProject.sql
       dest: /tmp/
       owner: root
       group: root
