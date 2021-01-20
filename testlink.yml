@@ -15,6 +15,13 @@
     item: '/testlink'
 
   tasks:
+
+  ### LAMP SERVER INSTALLATION ###
+
+  - name: install LAMP server
+    apt:
+      name: mariadb-client,nginx,php-cgi,php-common,php-pear,php-mbstring,php-fpm
+      state: latest
   
   - name: download testlink tarball
     get_url:
@@ -23,11 +30,8 @@
 
   - name: install pip
     command: apt install python-pip -y
-
-  - name: Make sure pymysql2 is present
-    command: pip install pymysql
   
-  - name: Make sure pymysql3 is present
+  - name: Make sure pymysql is present
     command: pip3 install pymysql
 
   - name: create admin group
