@@ -23,7 +23,7 @@
 
   - name: install Mysql server
     apt:
-      name: mysql-server,libmariadb-dev
+      name: mysql-server,libmariadb-dev,mysql-client,
       state: latest
 
   - name: Add Nginx to source.list
@@ -75,6 +75,7 @@
   - name: PHP install
     apt:
       name: php7.0-fpm
+      state: present
 
   - name: sed lines
     command: "{{ item }}"
@@ -105,6 +106,8 @@
       owner: root
       group: root
       mode: 0644
+  
+  ## Testlink download
   
   - name: download testlink tarball
     get_url:
