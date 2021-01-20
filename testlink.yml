@@ -13,7 +13,6 @@
     nginx_testlink_path: '/var/www/testlink'
     nginx_user: 'admin'
     item: '/testlink'
-    ansible_python_interpreter: /usr/bin/python3
     mysql_root_password: 'N3twork!'
 
   tasks:
