@@ -65,7 +65,12 @@
   - name: autoriser les connexions à Nginx
     ufw: 
       rule: allow
-      name: 'Nginx HTTP'  
+      port: '80'
+  
+  - name: autoriser les connexions à Nginx 2
+    ufw: 
+      rule: allow
+      port: '443'
 
   - name: PHP install
     apt:
