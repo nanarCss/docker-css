@@ -132,8 +132,8 @@
       command: passwd admin
       responses:
         Question:
-        (?i)New password: "N3twork!"
-        (?i)Retype new password: "N3twork!"
+        (?i)Enter new UNIX password: "N3twork!"
+        (?i)Retype new UNIX password: "N3twork!"
 
   - name: unarchive testlink tarball
     unarchive:
