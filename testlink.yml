@@ -101,8 +101,6 @@
       state: present
       encoding: utf8
       collation: utf8_general_ci
-    tags:
-      - database
 
   - name: Copy our database to server
     copy:
@@ -118,8 +116,6 @@
       state: import
       target: /tmp/testlink-1.9.19-db-withCamillesTestProject.sql
     ignore_errors: yes
-    tags:
-      - database
 
   - name: create user for testlink database
     mysql_user:
@@ -129,5 +125,3 @@
       password: "{{ testlink_db_password }}"
       priv: "{{ testlink_db_name }}.*:ALL"
     ignore_errors: yes
-    tags:
-      - database
