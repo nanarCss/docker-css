@@ -1,7 +1,7 @@
 ---
 - hosts: all
   become: yes
-
+  
   vars: 
     testlink_tarball_url: 'https://downloads.sourceforge.net/project/testlink/TestLink%201.9/TestLink%201.9.19/testlink-1.9.19.tar.gz'
     testlink_tarball_md5: 'https://downloads.sourceforge.net/project/testlink/TestLink%201.9/TestLink%201.9.19/testlink-1.9.19.tar.gz.md5'
@@ -13,6 +13,7 @@
     nginx_testlink_path: '/nginx'
     nginx_user: 'admin'
     item: '/testlink'
+    ansible_python_interpreter: /usr/bin/python3
 
   tasks:
 
