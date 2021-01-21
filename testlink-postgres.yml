@@ -74,23 +74,23 @@
       dest: /var/www/html
       copy: no
 
-  - name: change permissions /var/www/html/testlink/gui/templates_c
+  - name: change permissions /var/www/html/testlink-code-1.9.19/gui/templates_c
     file:
-      path: /var/www/html/testlink/gui/templates_c
+      path: /var/www/html/testlink-code-1.9.19/gui/templates_c
       mode: '777'
       owner: root
       group: root
   
-  - name: change permissions /var/www/html/testlink/logs
+  - name: change permissions /var/www/html/testlink-code-1.9.19/logs
     file:
-      path: /var/www/html/testlink/logs
+      path: /var/www/html/testlink-code-1.9.19/logs
       mode: '777'
       owner: root
       group: root
 
-  - name: change permissions /var/www/html/testlink/upload_area
+  - name: change permissions /var/www/html/testlink-code-1.9.19/upload_area
     file:
-      path: /var/www/html/testlink/upload_area
+      path: /var/www/html/testlink-code-1.9.19/upload_area
       mode: '777'
       owner: root
       group: root
@@ -138,7 +138,7 @@
     service:
       name: php7.0-fpm
       state: restarted
-      
+
   - name: restart apache2
     service:
       name: apache2
