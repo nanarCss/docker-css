@@ -134,8 +134,11 @@
   - name: a2enconf php7.0-fpm
     command: a2enconf php7.0-fpm
 
-  - name: 
-
+  - name: restart php7.0-fpm
+    service:
+      name: php7.0-fpm
+      state: restarted
+      
   - name: restart apache2
     service:
       name: apache2
