@@ -27,7 +27,7 @@
 
   - name: LAMP install
     apt: 
-      name: apache2,php,php-fpm,php-pgsql,libapache2-mod-php
+      name: apache2,php,php-fpm,php-pgsql,libapache2-mod-php,php-mbstring
 
   - name: install trusted GPG key
     apt_key:
