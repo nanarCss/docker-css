@@ -61,5 +61,15 @@
       rule: allow
       name: OpenSSH
 
+## LDAP configuration for gitlab
+
+  # - name: import gitlab.rb conf file for ESEO LDAP server
+  #   copy:
+  #     src: templates/gitlab.rb
+  #     dest: /etc/gitlab
+  #     owner: root
+  #     group: root
+  #     mode: 0644
+        
   - name: gitlab reconfigure
     command: gitlab-ctl reconfigure
