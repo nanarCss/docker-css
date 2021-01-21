@@ -1,0 +1,145 @@
+---
+- hosts: all
+  become: yes
+
+  vars:
+    posgresql_password: 'network'
+
+  tasks:
+
+### LAMP SERVER INSTALLATION ###
+
+  - name: apt update
+    become: true
+    apt:
+      upgrade: yes
+      update_cache: yes
+
+  - name: install sudo
+    apt:
+      name: sudo
+      state: present
+
+  - name: install psycopg2
+    apt:
+      name: python-psycopg2
+      state: present
+
+  - name: LAMP install
+    apt: 
+      name: apache2,php,php-fpm,php-pgsql,libapache2-mod-php
+
+  - name: install trusted GPG key
+    apt_key:
+      url: http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
+      state: present
+    
+  - name: create a repository file for PostgreSQL
+    command: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+    
+ 
+### POSTGRESQL CONFIGURATION ###
+
+  - name: install PostgreSQL
+    apt:
+      name: postgresql,postgresql-contrib,curl,python-pymysql,python3-pymysql
+      state: latest
+
+  - name: enable PostgreSQL service
+    command: systemctl enable postgresql.service
+    
+  - name: start PostgreSQL service
+    command: systemctl start  postgresql.service
+
+  - name: Change postgres password
+    become: yes
+    become_user: postgres
+    postgresql_user:
+      name: "postgres"
+      password: "{{ posgresql_password }}"
+
+  - name: restart PostgreSQL
+    command: systemctl restart postgresql
+
+### Testlink archive from github - SETUP
+
+  - name: get github version of testlink
+    get_url:
+      url: https://github.com/TestLinkOpenSourceTRMS/testlink-code/archive/1.9.19.tar.gz
+      dest: /tmp/testlink.tar.gz
+
+  - name: unarchive testlink archive
+    unarchive:
+      src: /tmp/testlink.tar.gz
+      dest: /var/www/html
+      copy: no
+
+  - name: change permissions /var/www/html/testlink/gui/templates_c
+    file:
+      path: /var/www/html/testlink/gui/templates_c
+      mode: '777'
+      owner: root
+      group: root
+  
+  - name: change permissions /var/www/html/testlink/logs
+    file:
+      path: /var/www/html/testlink/logs
+      mode: '777'
+      owner: root
+      group: root
+
+  - name: change permissions /var/www/html/testlink/upload_area
+    file:
+      path: /var/www/html/testlink/upload_area
+      mode: '777'
+      owner: root
+      group: root
+    
+  - name: create /var/testlink directory
+    file:
+      path: /var/testlink
+      state: directory
+  
+  - name: create /var/testlink/logs directory
+    file:
+      path: /var/testlink/logs
+      state: directory
+
+  - name: create /var/testlink/upload_area directory
+    file:
+      path: /var/testlink/upload_area
+      state: directory
+
+  - name: chmod -R 777 /var/testlink
+    command: chmod -R 777 /var/testlink
+
+  - name: edit /etc/php/7.0/fpm/php.ini execution time
+    lineinfile:
+      path: /etc/php/7.0/fpm/php.ini
+      regexp: max_execution_time = 30
+      replace: max_execution_time = 120
+
+  - name: edit /etc/php/7.0/fpm/php.ini pgsql.dll
+    lineinfile:
+      path: /etc/php/7.0/fpm/php.ini
+      regexp: ;extension=php_pdo_pgsql.dll
+      replace: extension=php_pdo_pgsql.dll
+  
+  - name: edit /etc/php/7.0/fpm/php.ini pgsql.dll
+    lineinfile:
+      path: /etc/php/7.0/fpm/php.ini
+      regexp: ;extension=php_pgsql.dll
+      replace: extension=php_pgsql.dll
+
+  - name: a2enconf php7.0-fpm
+    command: a2enconf php7.0-fpm
+
+  - name: 
+
+  - name: restart apache2
+    service:
+      name: apache2
+      state: restarted
+
+  
+  
