@@ -4,6 +4,9 @@
 
   vars:
     posgresql_password: 'network'
+    eseo_ldap_server: 'adresse ip du serveur ldap eseo'
+    eseo_ldap_port: 'port du serveur ldap eseo'
+    eseo_ldap_root_dn: 'root dn du serveur ldap eseo'
 
   tasks:
 
@@ -137,6 +140,24 @@
       state: touch
       mode: '777'
 
+  # - name: LDAP config | modify /var/www/html/testlink/config.inc.php - Serveur
+  #   replace:
+  #     path: /var/www/html/testlink-code-1.9.19/config.inc.php 
+  #     regexp: $tlCfg->authentication['ldap'][1]['ldap_server'] = 'localhost'
+  #     replace: $tlCfg->authentication['ldap'][1]['ldap_server'] = '{{ eseo_ldap_server }}'
+
+  # - name: LDAP config | modify /var/www/html/testlink/config.inc.php - Port
+  #   replace:
+  #     path: /var/www/html/testlink-code-1.9.19/config.inc.php 
+  #     regexp: $tlCfg->authentication['ldap'][1]['ldap_port'] = '389'
+  #     replace: $tlCfg->authentication['ldap'][1]['ldap_server'] = '{{ eseo_ldap_port }}'
+
+  # - name: LDAP config | modify /var/www/html/testlink/config.inc.php - Port
+  #   replace:
+  #     path: /var/www/html/testlink-code-1.9.19/config.inc.php - root_dn
+  #     regexp: $tlCfg->authentication['ldap'][1]['ldap_root_dn'] = 'dc=mycompany,dc=com';
+  #     replace: $tlCfg->authentication['ldap'][1]['ldap_root_dn'] = '{{ eseo_ldap_root_dn }}';
+    
   - name: a2enconf php7.0-fpm
     command: a2enconf php7.0-fpm
 
