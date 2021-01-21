@@ -61,7 +61,7 @@
 
   - name: install PostgreSQL
     apt:
-      name: postgresql,postgresql-contrib,curl
+      name: postgresql,postgresql-contrib,curl,python-pymysql,python3-pymysql
       state: latest
 
   - name: enable PostgreSQL service
@@ -96,8 +96,8 @@
       command: passwd postgres
       responses:
         Question:
-        (?i)New password: "N3twork!"
-        (?i)Retype new password: "N3twork!"
+        (?i)Enter new UNIX password: "N3twork!"
+        (?i)Retype new UNIX password: "N3twork!"
 
   - name: install sudo
     apt:
