@@ -172,7 +172,8 @@
     replace:
       path: /opt/sonarqube/conf/sonar.properties
       regexp: '#sonar.jdbc.url=jdbc:oracle:thin:@localhost:1521/XE'
-      replace: 'sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube'     
+      replace: 'sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube'
+           
   - name: edit 4 /opt/sonarqube/conf/sonar.properties
     replace:
       path: /opt/sonarqube/conf/sonar.properties
