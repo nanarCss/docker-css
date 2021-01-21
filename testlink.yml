@@ -242,27 +242,6 @@
       owner: root
       group: root
       mode: 0644
-
-  - name: Change file ownership, group and permissions
-    ansible.builtin.file:
-      path: /var/www/html/testlink/gui/templates_c
-      owner: root
-      group: root
-      mode: '777'
-
-  - name: Change file ownership, group and permissions
-    ansible.builtin.file:
-      path: /var/www/html/testlink/logs
-      owner: root
-      group: root
-      mode: '777'
-      
-  - name: Change file ownership, group and permissions
-    ansible.builtin.file:
-      path: /var/www/html/testlink/upload_area
-      owner: root
-      group: root
-      mode: '777'
   
   - name: execute .sh file
     command: sh /tmp/install&secure_mysql.sh
