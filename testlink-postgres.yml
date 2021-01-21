@@ -131,6 +131,12 @@
       regexp: ;extension=php_pgsql.dll
       replace: extension=php_pgsql.dll
 
+  - name: Create /var/www/html/testlink/config_db.inc.php 
+    file:
+      path: /var/www/html/testlink-code-1.9.19/config_db.inc.php 
+      state: touch
+      mode: '777'
+
   - name: a2enconf php7.0-fpm
     command: a2enconf php7.0-fpm
 
