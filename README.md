@@ -1,15 +1,26 @@
-# docker-css
+# Arborescence Git pour le projet awx
 
-docker s9
+* _Dossier InstallAWX :_ Fichier YAML pour l'installation d'une instance d'awx
 
-Mes fichiers pour créer un LAMP avec docker
+* _Dossier playbooks :_ Ensemble des fichiers YAML pour notre service de catalogue (Gitlab, Testlink, Sonarqube, Redmine)
 
-build.sh --> créer l'image à partir de mon dockerfile apache2-eseo (Apache, Php, PhpMyAdmin, WordPress)
+* _Dossier templates :_ L'endroit où l'on dépose un modèle de fichier de configuration par exemple pour le fichier gitlab.rb qui sert à la configuration du LDAP
+
+* _Dossier vars :_ L'ensemble des variables utilisés dans un playbook (ex: La configuration de l'instance openstack)
+
+* _Dossier ansible-jira :_ L'ensemble complet de l'installation de Jira sous forme de rôle
+  * defaults : Home directory de l'utilisateur Jira
+  * handlers : Jira service restart
+  * tasks : Ensemble des tâches pour la configuration de Jira
+  * templates : Les modèles pour la configuration de Jira
 
 
-run.sh --> initialise l'image et crée un serveur Mysql V.5.7.31 (root/network) 
+# Equipe de PFE 2020 - Plateforme de déploiement à la demande
 
+Funes de la Vega Lisandro\
+Pennarguéar Louis\
+Michel Alexandre\
+Teensma Kelvin\
+Debly Yann
 
-docker-compose.yml --> fichier docker-compose pour monter un serveur Apache avec Wordpress et une BDD (Mysql 5.7.31) distante
-
-#Connexion visual studio code
+ESEO CSS - 2020
